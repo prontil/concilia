@@ -225,7 +225,7 @@ th[data-sort-col] {
           <button id="tab-auth-login-btn" onclick="switchAuthTab('login')" class="pb-3 text-sm font-bold border-b-2 border-indigo-500 text-white flex-1 text-center transition">
             <i class="fa-solid fa-right-to-bracket mr-1.5 text-indigo-400"></i> Entrar na Conta
           </button>
-          <button id="tab-auth-register-btn" onclick="switchAuthTab('register')" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex-1 text-center transition">
+          <button id="tab-auth-register-btn" onclick="switchAuthTab('register')" class="hidden pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex-1 text-center transition">
             <i class="fa-solid fa-user-plus mr-1.5 text-slate-400"></i> Primeiro acesso
           </button>
         </div>
@@ -50694,7 +50694,8 @@ This typically indicates that your device does not have a healthy Internet conne
       btn?.classList.toggle("hidden", !aberto);
       if (!aberto) switchAuthTab("login");
     } catch {
-      btn?.classList.remove("hidden");
+      btn?.classList.add("hidden");
+      switchAuthTab("login");
     }
   }
   function entrarComConta(conta) {
