@@ -248,6 +248,10 @@ th[data-sort-col] {
             <p id="auth-login-erro" class="hidden text-[11px] font-semibold text-rose-300"></p>
             <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition">Entrar</button>
           </form>
+          <div class="pt-3 border-t border-slate-800">
+            <button type="button" onclick="entrarContaTeste()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-extrabold text-xs rounded-xl border border-slate-600 transition">Entrar com conta teste</button>
+            <p class="text-[10px] text-slate-500 mt-2 text-center">Simulação. Não pede senha e não grava nada no banco.</p>
+          </div>
         </div>
 
         <!-- FORM 2: PRIMEIRA CONTA (DIRETORIA) -->
@@ -467,12 +471,7 @@ th[data-sort-col] {
     
     <!-- Top Header Bar -->
     <header class="bg-white border-b border-slate-200 px-4 md:px-6 py-3.5 sticky top-0 z-10 shadow-sm">
-      <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3 items-center w-full">
-        <button onclick="resetMockData()" class="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl transition border border-slate-200/80 flex items-center justify-center gap-1.5 shadow-sm truncate">
-          <i class="fa-solid fa-rotate-left text-slate-500 flex-shrink-0"></i>
-          <span class="truncate">Reset Demo V7.2</span>
-        </button>
-        
+      <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-3 items-center w-full">
         <button onclick="openModal('modal-convenios')" class="w-full text-xs font-semibold px-3 py-2.5 bg-purple-50 hover:bg-purple-100/80 text-purple-800 rounded-xl transition border border-purple-200/80 flex items-center justify-center gap-1.5 shadow-sm truncate">
           <i class="fa-solid fa-sliders text-purple-600 flex-shrink-0"></i>
           <span class="truncate">Regras de Convênio</span>
@@ -489,6 +488,9 @@ th[data-sort-col] {
         </button>
       </div>
     </header>
+    <div id="demo-banner" class="hidden bg-amber-100 border-b border-amber-300 text-amber-950 text-xs font-semibold px-4 py-2 text-center">
+      Conta teste. O que você fizer aqui não é gravado no banco.
+    </div>
 
     <!-- Content Sections Wrapper -->
     <div class="p-4 md:p-6 space-y-6 flex-1 overflow-x-hidden">
@@ -43898,6 +43900,9 @@ This typically indicates that your device does not have a healthy Internet conne
   }
 
   // src/lib/concilia/storage.ts
+  var DEMO_FATURA_IDS = /* @__PURE__ */ new Set(["FAT_101", "FAT_102", "FAT_103", "FAT_104", "FAT_105", "FAT_106", "FAT_107", "FAT_109"]);
+  var DEMO_DEPOSITO_IDS = /* @__PURE__ */ new Set(["DEP_501", "DEP_502", "DEP_503"]);
+  var simulacao = false;
   var EMPTY_SESSION = {
     isLoggedIn: false,
     roleKey: "PERFIL_DIRETORIA",
@@ -43984,11 +43989,27 @@ This typically indicates that your device does not have a healthy Internet conne
     const legacy = migrateAppData(safeParse(localStorage.getItem(STORAGE_KEY_LEGACY)));
     return legacy;
   }
+  function emptyAppData() {
+    const seed = createSeedData();
+    return {
+      permissoes: seed.permissoes,
+      convenios: [],
+      faturas: [],
+      depositos: [],
+      logs: []
+    };
+  }
+  function pareceSomenteDemo(data) {
+    if (!data.faturas.length && !data.depositos.length) return false;
+    const soFaturasDemo = data.faturas.every((f) => DEMO_FATURA_IDS.has(f.id));
+    const soDepositosDemo = data.depositos.every((d) => DEMO_DEPOSITO_IDS.has(d.id));
+    return soFaturasDemo && soDepositosDemo;
+  }
   function notifyData() {
     dataListeners.forEach((fn) => fn());
   }
   function scheduleCloudPush(data) {
-    if (applyingRemote) return;
+    if (simulacao || applyingRemote) return;
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       saveTimer = null;
@@ -44013,6 +44034,23 @@ This typically indicates that your device does not have a healthy Internet conne
     notifyData();
   }
   var DataService = {
+    isSimulacao() {
+      return simulacao;
+    },
+    entrarSimulacao() {
+      simulacao = true;
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+      }
+      memoryCache = createSeedData();
+      return memoryCache;
+    },
+    sairSimulacao() {
+      if (!simulacao) return;
+      simulacao = false;
+      memoryCache = null;
+    },
     getAppData() {
       if (memoryCache) return memoryCache;
       const local = readLocal();
@@ -44020,19 +44058,15 @@ This typically indicates that your device does not have a healthy Internet conne
         memoryCache = local;
         return local;
       }
-      const seed = createSeedData();
-      writeLocal(seed);
-      return seed;
+      const empty = emptyAppData();
+      memoryCache = empty;
+      return empty;
     },
     saveAppData(data) {
+      memoryCache = data;
+      if (simulacao) return;
       writeLocal(data);
       scheduleCloudPush(data);
-    },
-    resetAppData() {
-      const seed = createSeedData();
-      writeLocal(seed);
-      scheduleCloudPush(seed);
-      return seed;
     },
     getCloudStatus() {
       return getCloudStatus();
@@ -44043,14 +44077,18 @@ This typically indicates that your device does not have a healthy Internet conne
       return () => dataListeners.delete(fn);
     },
     async hydrateCloud() {
+      if (simulacao) return getCloudStatus();
       markCloudSyncing();
       try {
         const remote = await pullCloudData();
-        const local = this.getAppData();
-        if (remote?.data) {
+        if (remote?.data && !pareceSomenteDemo(remote.data)) {
           applyRemote(remote.data, remote.updatedAt);
         } else {
-          lastCloudAt = await pushCloudData(local);
+          const empty = emptyAppData();
+          writeLocal(empty);
+          lastCloudAt = await pushCloudData(empty);
+          memoryCache = empty;
+          notifyData();
         }
       } catch (err) {
         if (isDatabaseMissing(err)) markCloudMissing();
@@ -50543,7 +50581,15 @@ This typically indicates that your device does not have a healthy Internet conne
   function renderCloudStatus() {
     const label = $2("cloud-status-label");
     const dot = $2("cloud-status-dot");
+    const banner = $2("demo-banner");
     if (!label || !dot) return;
+    if (DataService.isSimulacao()) {
+      label.textContent = "Simula\xE7\xE3o: n\xE3o grava no banco";
+      dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0";
+      banner?.classList.remove("hidden");
+      return;
+    }
+    banner?.classList.add("hidden");
     const st2 = DataService.getCloudStatus();
     if (st2 === "online") {
       label.textContent = "Nuvem Firestore: conectado";
@@ -50699,6 +50745,7 @@ This typically indicates that your device does not have a healthy Internet conne
     }
   }
   function entrarComConta(conta) {
+    DataService.sairSimulacao();
     AuthService.setCurrentRole(conta.role, conta.nome || conta.email);
     $2("screen-welcome")?.classList.add("hidden");
     switchTab("alertas");
@@ -50711,6 +50758,7 @@ This typically indicates that your device does not have a healthy Internet conne
   var contaAtivaUid = "";
   async function aoMudarLogin(user) {
     if (!user) {
+      if (DataService.isSimulacao()) return;
       contaAtivaUid = "";
       AuthService.logout();
       $2("screen-welcome")?.classList.remove("hidden");
@@ -50764,11 +50812,27 @@ This typically indicates that your device does not have a healthy Internet conne
     }
   }
   async function fazerLogout() {
-    const appData = DataService.getAppData();
-    audit(appData, "LOGOUT", `Saiu do sistema (${currentAuditActor().usuario}).`);
-    DataService.saveAppData(appData);
+    const simulacao2 = DataService.isSimulacao();
+    if (!simulacao2) {
+      const appData = DataService.getAppData();
+      audit(appData, "LOGOUT", `Saiu do sistema (${currentAuditActor().usuario}).`);
+      DataService.saveAppData(appData);
+    }
+    DataService.sairSimulacao();
     contaAtivaUid = "";
-    await sairDaConta();
+    AuthService.logout();
+    if (!simulacao2) await sairDaConta();
+    else $2("screen-welcome")?.classList.remove("hidden");
+  }
+  function entrarContaTeste() {
+    DataService.entrarSimulacao();
+    contaAtivaUid = "simulacao";
+    AuthService.setCurrentRole("PERFIL_DIRETORIA", "Conta teste");
+    setAuthErro("auth-login-erro", "");
+    $2("screen-welcome")?.classList.add("hidden");
+    switchTab("alertas");
+    renderAllViews();
+    renderCloudStatus();
   }
   async function abrirModalEquipe() {
     executarAcaoRole("canManagePermissions", () => {
@@ -53725,17 +53789,11 @@ ${draft.corpo}`;
   function filtrarFinanceiroVencidas() {
     abrirAlerta("vencidas");
   }
-  function resetMockData() {
-    const data = DataService.resetAppData();
-    audit(data, "DEMO_RESET", "Restaurou a demo V7.2 (seed).");
-    DataService.saveAppData(data);
-    renderAllViews();
-    showToast("Demo restaurada para o seed V7.2.");
-  }
   function bindGlobals() {
     const api = {
       switchAuthTab,
       handleLogin,
+      entrarContaTeste,
       handleCadastrarUsuario,
       fazerLogout,
       abrirModalEquipe,
@@ -53744,7 +53802,6 @@ ${draft.corpo}`;
       openModal,
       closeModal,
       executarAcaoRole,
-      resetMockData,
       renderAllViews,
       renderFinanceiroTable,
       renderRastreioTable,
