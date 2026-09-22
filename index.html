@@ -50734,15 +50734,8 @@ This typically indicates that your device does not have a healthy Internet conne
     el.classList.toggle("hidden", !message);
   }
   async function atualizarAbaPrimeiroAcesso() {
-    const btn = $2("tab-auth-register-btn");
-    try {
-      const aberto = await primeiroAcessoAberto();
-      btn?.classList.toggle("hidden", !aberto);
-      if (!aberto) switchAuthTab("login");
-    } catch {
-      btn?.classList.add("hidden");
-      switchAuthTab("login");
-    }
+    $2("tab-auth-register-btn")?.classList.add("hidden");
+    switchAuthTab("login");
   }
   function entrarComConta(conta) {
     DataService.sairSimulacao();
