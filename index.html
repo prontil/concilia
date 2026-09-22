@@ -219,18 +219,6 @@ th[data-sort-col] {
 
       <!-- Right Auth Form Card -->
       <div class="md:col-span-7 p-6 md:p-8 flex flex-col justify-center bg-slate-900 text-slate-200">
-        
-        <!-- Auth Tabs Switcher -->
-        <div class="flex border-b border-slate-800 mb-6">
-          <button id="tab-auth-login-btn" onclick="switchAuthTab('login')" class="pb-3 text-sm font-bold border-b-2 border-indigo-500 text-white flex-1 text-center transition">
-            <i class="fa-solid fa-right-to-bracket mr-1.5 text-indigo-400"></i> Entrar na Conta
-          </button>
-          <button id="tab-auth-register-btn" onclick="switchAuthTab('register')" class="hidden pb-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex-1 text-center transition">
-            <i class="fa-solid fa-user-plus mr-1.5 text-slate-400"></i> Primeiro acesso
-          </button>
-        </div>
-
-        <!-- FORM 1: ENTRAR -->
         <div id="auth-tab-login" class="space-y-4">
           <div>
             <h3 class="text-base font-bold text-white">Entrar no Concili.a</h3>
@@ -252,31 +240,6 @@ th[data-sort-col] {
             <button type="button" onclick="entrarContaTeste()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-extrabold text-xs rounded-xl border border-slate-600 transition">Entrar com conta teste</button>
             <p class="text-[10px] text-slate-500 mt-2 text-center">Simulação. Não pede senha e não grava nada no banco.</p>
           </div>
-        </div>
-
-        <!-- FORM 2: PRIMEIRA CONTA (DIRETORIA) -->
-        <div id="auth-tab-register" class="space-y-3.5 hidden">
-          <div>
-            <h3 class="text-base font-bold text-white">Primeiro acesso</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Cria a conta da Diretoria. As outras contas são criadas por ela, já com o perfil certo.</p>
-          </div>
-
-          <form id="form-cadastrar-usuario" onsubmit="handleCadastrarUsuario(event)" class="space-y-3 text-xs">
-            <div>
-              <label class="block font-semibold text-slate-300 mb-1">Nome completo</label>
-              <input type="text" id="reg-nome" required placeholder="Ex: Dra. Patrícia Medeiros" class="w-full p-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none focus:border-indigo-500 font-semibold">
-            </div>
-            <div>
-              <label class="block font-semibold text-slate-300 mb-1">E-mail</label>
-              <input type="email" id="reg-email" required autocomplete="username" placeholder="nome@hospital.com.br" class="w-full p-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none focus:border-indigo-500">
-            </div>
-            <div>
-              <label class="block font-semibold text-slate-300 mb-1">Senha (mínimo 6)</label>
-              <input type="password" id="reg-senha" required minlength="6" autocomplete="new-password" placeholder="••••••••" class="w-full p-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl focus:outline-none focus:border-indigo-500">
-            </div>
-            <p id="auth-reg-erro" class="hidden text-[11px] font-semibold text-rose-300"></p>
-            <button type="submit" class="w-full py-3 mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition">Criar conta da Diretoria</button>
-          </form>
         </div>
 
       </div>
@@ -50733,10 +50696,6 @@ This typically indicates that your device does not have a healthy Internet conne
     el.textContent = message;
     el.classList.toggle("hidden", !message);
   }
-  async function atualizarAbaPrimeiroAcesso() {
-    $2("tab-auth-register-btn")?.classList.add("hidden");
-    switchAuthTab("login");
-  }
   function entrarComConta(conta) {
     DataService.sairSimulacao();
     AuthService.setCurrentRole(conta.role, conta.nome || conta.email);
@@ -50755,7 +50714,6 @@ This typically indicates that your device does not have a healthy Internet conne
       contaAtivaUid = "";
       AuthService.logout();
       $2("screen-welcome")?.classList.remove("hidden");
-      void atualizarAbaPrimeiroAcesso();
       return;
     }
     if (user.uid === contaAtivaUid && AuthService.getSession().isLoggedIn) return;
@@ -53879,7 +53837,6 @@ ${draft.corpo}`;
     const stopAuth = observarLogin((user) => {
       void aoMudarLogin(user);
     });
-    void atualizarAbaPrimeiroAcesso();
     const stopCloudStatus = DataService.onCloudStatusChange(() => renderCloudStatus());
     const stopRemote = DataService.onRemoteData(() => {
       if (AuthService.getSession().isLoggedIn) renderAllViews();
