@@ -876,10 +876,30 @@ th[data-sort-col] {
             <div class="p-2.5 bg-amber-500 text-white rounded-xl shadow-sm flex-shrink-0"><i class="fa-solid fa-filter-circle-dollar text-lg"></i></div>
             <div>
               <h3 class="font-bold text-amber-950 text-sm">Caixa de Entrada de Depósitos Não Conciliados</h3>
-              <p class="text-xs text-amber-800 mt-0.5">O Faturamento apenas vincula à Nota Mãe e abate o recebido. Toda divergência entra automaticamente em Recursos de Glosa.</p>
+              <p class="text-xs text-amber-800 mt-0.5">Vincule à nota do Concili.a ou marque como carteira anterior. O que sobrar fica na triagem. A soma tem que bater com o TED.</p>
             </div>
           </div>
           <span class="ia-slot" data-ia="triagem"></span>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="bg-white border border-slate-200 rounded-2xl p-3.5">
+            <p class="text-[10px] font-bold uppercase text-slate-500">Notas do Concili.a</p>
+            <p id="triagem-ctrl-ciclo" class="text-lg font-extrabold text-indigo-700 mt-1">R$ 0,00</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-3.5">
+            <p class="text-[10px] font-bold uppercase text-slate-500">Carteira anterior</p>
+            <p id="triagem-ctrl-anterior" class="text-lg font-extrabold text-slate-800 mt-1">R$ 0,00</p>
+          </div>
+          <div class="bg-white border border-amber-200 rounded-2xl p-3.5">
+            <p class="text-[10px] font-bold uppercase text-amber-700">Ainda na triagem</p>
+            <p id="triagem-ctrl-triagem" class="text-lg font-extrabold text-amber-700 mt-1">R$ 0,00</p>
+          </div>
+          <div class="bg-white border border-emerald-200 rounded-2xl p-3.5">
+            <p class="text-[10px] font-bold uppercase text-emerald-700">Extrato lançado</p>
+            <p id="triagem-ctrl-extrato" class="text-lg font-extrabold text-emerald-700 mt-1">R$ 0,00</p>
+            <p id="triagem-ctrl-conta" class="text-[10px] text-slate-400 mt-1">A soma dos três primeiros tem que ser este valor.</p>
+          </div>
         </div>
 
         <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
@@ -1864,6 +1884,17 @@ th[data-sort-col] {
           </div>
           <p class="text-[10px] text-emerald-800 leading-tight">Baixa recursos / réplicas em aberto. Não cria glosa nova e não se mistura com o saldo da NF.</p>
           <div id="rateio-recs-container" class="space-y-2"></div>
+        </div>
+
+        <div class="p-3.5 bg-slate-100 border border-slate-300 rounded-2xl space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <label class="font-bold text-slate-800 text-xs uppercase tracking-wider">3. Carteira anterior</label>
+            <button type="button" onclick="addRateioAntRow()" class="px-2 py-1 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-lg text-[10px] flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i> Adicionar
+            </button>
+          </div>
+          <p class="text-[10px] text-slate-600 leading-tight">Nota ou recurso que não está no Concili.a. Informe só o número e o valor deste crédito. Não cria nota, saldo nem protocolo.</p>
+          <div id="rateio-ant-container" class="space-y-2"></div>
         </div>
 
         <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
@@ -17190,6 +17221,26 @@ Pode nos retornar com o posicionamento, por favor?`;
   function isDepositoAberto(dep) {
     return dep.status !== "Conciliado" && valorDisponivelDeposito(dep) > 9e-3;
   }
+  function controleExtrato(depositos) {
+    let extrato = 0;
+    let ciclo = 0;
+    let anterior = 0;
+    let triagem = 0;
+    (depositos || []).forEach((d) => {
+      extrato += d.valor || 0;
+      triagem += valorDisponivelDeposito(d);
+      const linhas = d.rateios || [];
+      if (!linhas.length) {
+        ciclo += valorRateadoDeposito(d);
+        return;
+      }
+      linhas.forEach((r2) => {
+        if (r2.tipo === "ANTERIOR") anterior += r2.valor || 0;
+        else ciclo += r2.valor || 0;
+      });
+    });
+    return { extrato: round2(extrato), ciclo: round2(ciclo), anterior: round2(anterior), triagem: round2(triagem) };
+  }
   function statusDepositoAposRateio(disponivelRestante, rateadoAcumulado) {
     if (round2(disponivelRestante) <= 9e-3) return "Conciliado";
     if (round2(rateadoAcumulado) > 9e-3) return "Rateado Parcial";
@@ -17258,7 +17309,8 @@ Pode nos retornar com o posicionamento, por favor?`;
     const disponivel = round2(Math.max(0, params.disponivel || 0));
     const totalNf = round2(Math.max(0, params.totalNf || 0));
     const totalRecurso = round2(Math.max(0, params.totalRecurso || 0));
-    const total = round2(totalNf + totalRecurso);
+    const totalAnterior = round2(Math.max(0, params.totalAnterior || 0));
+    const total = round2(totalNf + totalRecurso + totalAnterior);
     if (total <= 9e-3) {
       return { ok: false, erro: "Informe ao menos um valor para ratear neste cr\xE9dito.", total, residual: disponivel };
     }
@@ -17297,6 +17349,7 @@ Pode nos retornar com o posicionamento, por favor?`;
     return a.depositoId === b2.depositoId && a.tipo === b2.tipo && a.faturaId === b2.faturaId && (a.movId || "") === (b2.movId || "") && Math.abs((a.valor || 0) - (b2.valor || 0)) < 9e-3 && (a.data || "") === (b2.data || "");
   }
   function reverterLancamentoRateio(faturas, lanc) {
+    if (lanc.tipo === "ANTERIOR") return;
     const fat = faturas.find((f) => f.id === lanc.faturaId);
     if (!fat) return;
     if (lanc.tipo === "RECURSO") {
@@ -18018,7 +18071,7 @@ Pode nos retornar com o posicionamento, por favor?`;
     return true;
   }
   function chaveRateio(r2) {
-    return `${r2.tipo}|${r2.faturaId}|${r2.movId || ""}|${round2(r2.valor || 0)}|${r2.data || ""}`;
+    return `${r2.tipo}|${r2.faturaId}|${r2.numero_nota || ""}|${r2.movId || ""}|${round2(r2.valor || 0)}|${r2.data || ""}`;
   }
   function collectPagamentosRastreio(faturas, depositos) {
     const byTed = /* @__PURE__ */ new Map();
@@ -18116,7 +18169,38 @@ Pode nos retornar com o posicionamento, por favor?`;
     const linhas = [];
     let nfTotal = 0;
     let recTotal = 0;
+    let antTotal = 0;
     (pag.rateios || []).forEach((h) => {
+      if (h.tipo === "ANTERIOR") {
+        antTotal += h.valor || 0;
+        const recurso = h.destino_anterior === "RECURSO";
+        linhas.push({
+          tipo: "ANTERIOR",
+          data: h.data || pag.data,
+          valor: round2(h.valor || 0),
+          numero_nota: h.numero_nota || "-",
+          remessa: "-",
+          lote: "-",
+          convenio: pag.convenio,
+          natureza: recurso ? "Carteira anterior: pagamento de recurso que n\xE3o est\xE1 no Concili.a" : "Carteira anterior: pagamento de nota que n\xE3o est\xE1 no Concili.a",
+          integral: false,
+          glosa: 0,
+          glosaDestino: "",
+          protocolo: recurso ? "RECURSO" : "NF",
+          instancia: "RECURSO",
+          statusParcela: "",
+          saldoNota: 0,
+          statusNota: "",
+          valorNota: 0,
+          emAbertoRecurso: 0,
+          recuperadoRecurso: 0,
+          observacao: h.observacao || "",
+          motivoGlosa: "",
+          tituloRecurso: "",
+          anotacaoRecurso: ""
+        });
+        return;
+      }
       const fat = faturas.find((f) => f.id === h.faturaId) || faturas.find((f) => f.numero_nota === h.numero_nota);
       const mov = fat?.movimentacoes.find((m2) => h.movId && m2.id === h.movId) || fat?.movimentacoes.find((m2) => m2.identificador_bancario === pag.ted);
       const glosaMov = h.tipo === "NF" && (h.criaGlosa || mov && (mov.valor_glosado || 0) > 9e-3) ? round2(mov?.valor_glosado || 0) : 0;
@@ -18178,10 +18262,18 @@ Pode nos retornar com o posicionamento, por favor?`;
     });
     nfTotal = round2(nfTotal);
     recTotal = round2(recTotal);
-    const residual = round2(Math.max(0, (pag.valor || 0) - nfTotal - recTotal));
-    return { nfTotal, recTotal, residual, linhas };
+    antTotal = round2(antTotal);
+    const residual = round2(Math.max(0, (pag.valor || 0) - nfTotal - recTotal - antTotal));
+    return { nfTotal, recTotal, anterior: antTotal, residual, linhas };
   }
   function fraseDestinoPagamento(l2) {
+    if (l2.tipo === "ANTERIOR") {
+      const recurso = l2.protocolo === "RECURSO";
+      return {
+        titulo: recurso ? `foi para a carteira anterior, pagamento do recurso ${l2.numero_nota}` : `foi para a carteira anterior, pagamento da ${l2.numero_nota}`,
+        complemento: "Nota ou recurso de antes do Concili.a. N\xE3o entra no ciclo novo e n\xE3o cria saldo."
+      };
+    }
     if (l2.tipo === "RECURSO") {
       const rec = l2.protocolo && l2.protocolo !== "-" && !/^SEM RECURSO$/i.test(l2.protocolo) ? l2.protocolo : "recurso de glosa";
       const titulo2 = l2.emAbertoRecurso <= 9e-3 ? `foi para pagar integralmente o recurso ${rec} da ${l2.numero_nota}` : `foi para pagar parte do recurso ${rec} da ${l2.numero_nota}`;
@@ -51486,6 +51578,13 @@ This typically indicates that your device does not have a healthy Internet conne
   }
   function renderTriagemTable() {
     const appData = DataService.getAppData();
+    const controle = controleExtrato(appData.depositos || []);
+    setText("triagem-ctrl-ciclo", formatBRL(controle.ciclo));
+    setText("triagem-ctrl-anterior", formatBRL(controle.anterior));
+    setText("triagem-ctrl-triagem", formatBRL(controle.triagem));
+    setText("triagem-ctrl-extrato", formatBRL(controle.extrato));
+    const fecha = Math.abs(controle.ciclo + controle.anterior + controle.triagem - controle.extrato) <= 0.02;
+    setText("triagem-ctrl-conta", fecha ? "Ciclo + anterior + triagem = extrato." : "A soma n\xE3o fechou com o extrato. Confira os v\xEDnculos.");
     const hoje = todayISO();
     const pendentes = (appData.depositos || []).filter((d) => isDepositoAberto(d));
     setText("badge-triagem-count", String(pendentes.length));
@@ -51548,8 +51647,8 @@ This typically indicates that your device does not have a healthy Internet conne
     const alocado = rateios.reduce((acc, r2) => acc + (r2.valor || 0), 0) || (d.valor_rateado || 0);
     const disponivel = valorDisponivelDeposito(d);
     const linhas = rateios.length ? rateios.map((r2) => {
-      const tipo = r2.tipo === "RECURSO" ? "Pagamento de recurso" : "Pagamento de NF";
-      const extra = r2.tipo === "RECURSO" ? ` \xB7 ${escapeHtml(r2.protocolo || "-")}` : r2.criaGlosa ? " \xB7 diferen\xE7a \u2192 auditoria" : "";
+      const tipo = r2.tipo === "ANTERIOR" ? r2.destino_anterior === "RECURSO" ? "Carteira anterior \xB7 recurso" : "Carteira anterior \xB7 nota" : r2.tipo === "RECURSO" ? "Pagamento de recurso" : "Pagamento de NF";
+      const extra = r2.tipo === "RECURSO" ? ` \xB7 ${escapeHtml(r2.protocolo || "-")}` : r2.tipo === "NF" && r2.criaGlosa ? " \xB7 diferen\xE7a \u2192 auditoria" : "";
       const obs = r2.observacao ? `<div class="text-slate-600 italic mt-0.5">${escapeHtml(r2.observacao)}</div>` : "";
       return `<div class="flex justify-between gap-2 text-[11px] py-1 border-b border-slate-100 last:border-0">
             <span><b class="text-slate-800">${escapeHtml(tipo)}</b> \xB7 ${escapeHtml(r2.numero_nota)}${extra}<div class="text-slate-400">${formatDateBR(r2.data)} \xB7 ${escapeHtml(r2.ted)}</div>${obs}</span>
@@ -52705,8 +52804,10 @@ This typically indicates that your device does not have a healthy Internet conne
       preencherCabecalhoVinculo(dep);
       const nfs = $2("rateio-nfs-container");
       const recs = $2("rateio-recs-container");
+      const ants = $2("rateio-ant-container");
       if (nfs) nfs.innerHTML = "";
       if (recs) recs.innerHTML = "";
+      if (ants) ants.innerHTML = "";
       openModal("modal-vincular-deposito");
       atualizarPreviewVinculo();
     });
@@ -52814,6 +52915,38 @@ This typically indicates that your device does not have a healthy Internet conne
     document.getElementById(rowId)?.remove();
     atualizarPreviewVinculo();
   }
+  function addRateioAntRow() {
+    const container = $2("rateio-ant-container");
+    if (!container) return;
+    const rowId = uid2("rateio_ant");
+    const div = document.createElement("div");
+    div.id = rowId;
+    div.className = "rateio-ant-row p-2.5 bg-white border border-slate-300 rounded-xl space-y-1.5";
+    div.innerHTML = `
+    <div class="grid grid-cols-12 gap-1.5 items-center">
+      <div class="col-span-12 sm:col-span-4">
+        <select class="rateio-ant-destino w-full p-2 text-[11px] bg-white border border-slate-300 rounded-lg font-medium" onchange="atualizarPreviewVinculo()">
+          <option value="NF">Pagamento de nota</option>
+          <option value="RECURSO">Pagamento de recurso</option>
+        </select>
+      </div>
+      <div class="col-span-12 sm:col-span-4"><input type="text" class="rateio-ant-nota w-full p-2 text-[11px] bg-white border border-slate-300 rounded-lg font-semibold" placeholder="N\xFAmero da nota ou do recurso" oninput="atualizarPreviewVinculo()"></div>
+      <div class="col-span-10 sm:col-span-3"><input type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" class="rateio-ant-valor money-br w-full p-2 text-[11px] bg-white border border-slate-300 rounded-lg font-semibold" oninput="onMoneyInput(this, atualizarPreviewVinculo)"></div>
+      <div class="col-span-2 sm:col-span-1 text-center"><button type="button" onclick="removeRateioRow('${rowId}')" class="text-rose-500 hover:text-rose-700 p-1" title="Remover"><i class="fa-solid fa-circle-xmark"></i></button></div>
+    </div>`;
+    container.appendChild(div);
+    atualizarPreviewVinculo();
+  }
+  function lerRateioAntDom() {
+    const linhas = [];
+    document.querySelectorAll(".rateio-ant-row").forEach((row) => {
+      const destino = (row.querySelector(".rateio-ant-destino")?.value || "NF") === "RECURSO" ? "RECURSO" : "NF";
+      const numero = (row.querySelector(".rateio-ant-nota")?.value || "").trim();
+      const valor = parseBRL(row.querySelector(".rateio-ant-valor")?.value || "");
+      if (valor > 0 || numero) linhas.push({ destino, numero, valor });
+    });
+    return linhas;
+  }
   function lerRateioNfDom() {
     const linhas = [];
     document.querySelectorAll(".rateio-nf-row").forEach((row) => {
@@ -52851,6 +52984,9 @@ This typically indicates that your device does not have a healthy Internet conne
     document.querySelectorAll(".rateio-rec-valor").forEach((input) => {
       usado += parseBRL(input.value || "");
     });
+    document.querySelectorAll(".rateio-ant-valor").forEach((input) => {
+      usado += parseBRL(input.value || "");
+    });
     usado = Math.round((usado + Number.EPSILON) * 100) / 100;
     const restante = Math.round((disponivel - usado + Number.EPSILON) * 100) / 100;
     el.textContent = formatBRL(restante);
@@ -52867,6 +53003,15 @@ This typically indicates that your device does not have a healthy Internet conne
       const disponivel = valorDisponivelDeposito(dep);
       const linhasNf = lerRateioNfDom();
       const linhasRec = lerRateioRecDom();
+      const linhasAnt = lerRateioAntDom();
+      if (linhasAnt.some((l2) => l2.valor > 9e-3 && !l2.numero)) {
+        showToast("Na carteira anterior, informe o n\xFAmero da nota ou do recurso.");
+        return;
+      }
+      if (linhasAnt.some((l2) => l2.numero && l2.valor <= 9e-3)) {
+        showToast("Na carteira anterior, informe o valor deste cr\xE9dito.");
+        return;
+      }
       const remainingNf = /* @__PURE__ */ new Map();
       const nfAplicadas = [];
       let totalNf = 0;
@@ -52906,7 +53051,8 @@ This typically indicates that your device does not have a healthy Internet conne
       }
       totalNf = Math.round((totalNf + Number.EPSILON) * 100) / 100;
       totalRecurso = Math.round((totalRecurso + Number.EPSILON) * 100) / 100;
-      const fechamento = fecharRateioDeposito({ disponivel, totalNf, totalRecurso });
+      const totalAnterior = Math.round((linhasAnt.reduce((acc, l2) => acc + (l2.valor > 0 ? l2.valor : 0), 0) + Number.EPSILON) * 100) / 100;
+      const fechamento = fecharRateioDeposito({ disponivel, totalNf, totalRecurso, totalAnterior });
       if (!fechamento.ok) {
         showToast(fechamento.erro || "Rateio inv\xE1lido.");
         return;
@@ -52988,6 +53134,21 @@ This typically indicates that your device does not have a healthy Internet conne
         }
         recalculateFaturaSaldo(fat);
       });
+      linhasAnt.forEach((linha) => {
+        if (linha.valor <= 9e-3 || !linha.numero) return;
+        const lanc = {
+          data: dep.data_recebimento || todayISO(),
+          depositoId: dep.id,
+          ted: dep.identificador_bancario,
+          tipo: "ANTERIOR",
+          destino_anterior: linha.destino,
+          valor: Math.round((linha.valor + Number.EPSILON) * 100) / 100,
+          faturaId: "",
+          numero_nota: linha.numero,
+          observacao: ""
+        };
+        dep.rateios = [...dep.rateios || [], lanc];
+      });
       const rateadoAntes = valorRateadoDeposito(dep);
       const novoRateado = Math.round((rateadoAntes + fechamento.total + Number.EPSILON) * 100) / 100;
       dep.valor_rateado = novoRateado;
@@ -53003,7 +53164,7 @@ This typically indicates that your device does not have a healthy Internet conne
         "VINCULO",
         `Rateou ${formatBRL(fechamento.total)} do TED ${dep.identificador_bancario}.`,
         notas[0] || dep.identificador_bancario,
-        `NFs ${notas.join(", ") || "-"} \xB7 Recursos ${prots.join(", ") || "-"} \xB7 residual ${formatBRL(fechamento.residual)}`
+        `NFs ${notas.join(", ") || "-"} \xB7 Recursos ${prots.join(", ") || "-"} \xB7 Anterior ${linhasAnt.map((l2) => l2.numero).filter(Boolean).join(", ") || "-"} \xB7 residual ${formatBRL(fechamento.residual)}`
       );
       DataService.saveAppData(appData);
       closeModal("modal-vincular-deposito");
@@ -53809,6 +53970,7 @@ ${draft.corpo}`;
       atualizarPreviewVinculo,
       confirmarVinculacao,
       addRateioNfRow,
+      addRateioAntRow,
       addRateioRecRow,
       removeRateioRow,
       onRateioNfEdit,
