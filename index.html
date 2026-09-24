@@ -381,6 +381,10 @@ th[data-sort-col] {
             <i class="fa-solid fa-users w-5 text-center text-indigo-400 flex-shrink-0"></i>
             <span class="truncate">Equipe e senhas</span>
           </button>
+          <button id="btn-sidebar-hospital" onclick="abrirModalHospital()" class="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all duration-200 border border-slate-700">
+            <i class="fa-solid fa-hospital w-5 text-center text-rose-300 flex-shrink-0"></i>
+            <span class="truncate">Cadastro do hospital</span>
+          </button>
         </div>
       </nav>
 
@@ -1435,6 +1439,10 @@ th[data-sort-col] {
               <input type="checkbox" id="conv-replica-treplica" class="w-4 h-4 text-purple-600 rounded">
               <span>Permite Réplica e Tréplica de Recurso</span>
             </label>
+            <label class="flex items-center gap-2 cursor-pointer text-slate-700 font-semibold sm:col-span-2">
+              <input type="checkbox" id="conv-retem-iss" class="w-4 h-4 text-purple-600 rounded">
+              <span>Retém ISS. O valor informado na emissão é descontado do bruto e não entra no caixa.</span>
+            </label>
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -1593,7 +1601,7 @@ th[data-sort-col] {
         </div>
 
         <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
-          <button type="button" onclick="closeModal('modal-novo-deposito')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Cancelar</button>
+          <button type="button" onclick="closeModal('modal-novo-deposito')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
           <button type="submit" id="btn-salvar-deposito" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md">Salvar Depósito na Triagem</button>
         </div>
       </form>
@@ -1688,7 +1696,7 @@ th[data-sort-col] {
         </div>
 
         <div class="flex justify-end gap-2 pt-1">
-          <button type="button" onclick="closeModal('modal-log-cobranca')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl font-semibold">Cancelar</button>
+          <button type="button" onclick="closeModal('modal-log-cobranca')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
           <button type="submit" class="px-4 py-1.5 bg-rose-700 text-white rounded-xl font-bold">Registrar ocorrência</button>
         </div>
       </form>
@@ -1748,6 +1756,13 @@ th[data-sort-col] {
           </div>
         </div>
 
+        <div id="panel-iss-emissao" class="hidden p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+          <label class="block font-semibold text-slate-700">ISS retido neste convênio</label>
+          <input type="text" inputmode="decimal" autocomplete="off" id="input-iss" placeholder="0,00" oninput="onMoneyInput(this, recalcularMultiLoteEmissao)" class="money-br w-full p-2.5 bg-white border border-slate-200 rounded-xl font-bold">
+          <p class="text-[11px] text-slate-500">Marcado no cadastro do convênio. Fora do multi-lote, sai do valor bruto da nota. No multi-lote, sai no fim: pagamento do lote = líquido + complemento − ISS. Não entra no caixa e não deve ser lançado de novo na glosa.</p>
+          <p class="text-[11px] font-semibold text-slate-700">Líquido da nota: <span id="iss-liquido" class="text-emerald-700">R$ 0,00</span></p>
+        </div>
+
         <!-- PAINEL MULTI-LOTE DINÂMICO COM AS 7 ETAPAS EXATAS -->
         <div id="panel-multi-lote-emissao" class="p-4 bg-purple-50/80 border border-purple-200 rounded-2xl space-y-3.5 hidden">
           <div class="flex items-center justify-between border-b border-purple-200/80 pb-2">
@@ -1787,15 +1802,9 @@ th[data-sort-col] {
               <input type="text" inputmode="decimal" autocomplete="off" id="ml-glosa" placeholder="0,00" oninput="onMoneyInput(this, recalcularMultiLoteEmissao)" class="money-br w-full p-2 bg-amber-50 border border-amber-300 rounded-xl font-bold text-amber-900">
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block font-semibold text-slate-700 mb-1">5. Complemento (+)</label>
-                <input type="text" inputmode="decimal" autocomplete="off" id="ml-complemento" placeholder="0,00" oninput="onMoneyInput(this, recalcularMultiLoteEmissao)" class="money-br w-full p-2 bg-white border border-slate-200 rounded-xl font-bold">
-              </div>
-              <div>
-                <label class="block font-semibold text-slate-700 mb-1">6. ISS / Impostos (retenção)</label>
-                <input type="text" inputmode="decimal" autocomplete="off" id="ml-iss" placeholder="0,00" oninput="onMoneyInput(this, recalcularMultiLoteEmissao)" class="money-br w-full p-2 bg-white border border-slate-200 rounded-xl font-bold">
-              </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">5. Complemento (+)</label>
+              <input type="text" inputmode="decimal" autocomplete="off" id="ml-complemento" placeholder="0,00" oninput="onMoneyInput(this, recalcularMultiLoteEmissao)" class="money-br w-full p-2 bg-white border border-slate-200 rounded-xl font-bold">
             </div>
           </div>
 
@@ -1824,17 +1833,29 @@ th[data-sort-col] {
             <div id="ml-recursos-anteriores-container" class="space-y-2"></div>
           </div>
 
+          <div class="space-y-2 text-[11px] pt-1">
+            <div class="flex items-center justify-between">
+              <label class="font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-clock-rotate-left text-slate-600"></i> Carteira anterior
+              </label>
+              <button type="button" onclick="addMlAnteriorRow()" class="px-2 py-1 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-lg text-[10px] flex items-center gap-1 transition">
+                <i class="fa-solid fa-plus"></i> Adicionar
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-500 leading-tight">Nota ou recurso que ainda não está no Concili.a. Só o número e o valor deste rateio. Não cria título.</p>
+            <div id="ml-anterior-container" class="space-y-2"></div>
+          </div>
+
           <div id="ml-summary-box" class="p-3 bg-slate-900 text-slate-200 rounded-xl space-y-1.5 text-[11px] font-medium">
             <div class="flex justify-between text-slate-300"><span>Valor Faturado Bruto:</span><span id="ml-sum-bruto" class="font-bold text-white">R$ 0,00</span></div>
-            <div class="flex justify-between text-emerald-400"><span>Caixa desta NF (líquido + complemento − vínculos):</span><span id="ml-sum-retencoes">R$ 0,00</span></div>
-            <div class="flex justify-between text-indigo-300"><span>Vínculos / Abatimentos Anteriores:</span><span id="ml-sum-vinculos">R$ 0,00</span></div>
-            <div class="flex justify-between text-slate-400"><span>ISS (retenção, não entra em caixa):</span><span id="ml-sum-iss">R$ 0,00</span></div>
-            <div class="flex justify-between text-emerald-400 font-extrabold border-t border-slate-800 pt-1"><span>7. Documento (4 + 5 + 6):</span><span id="ml-sum-liquido">R$ 0,00</span></div>
+            <div class="flex justify-between text-emerald-400"><span>Caixa desta NF (pagamento do lote − vínculos):</span><span id="ml-sum-retencoes">R$ 0,00</span></div>
+            <div class="flex justify-between text-indigo-300"><span>Vínculos / abatimentos (notas, recursos e carteira anterior):</span><span id="ml-sum-vinculos">R$ 0,00</span></div>
+            <div class="flex justify-between text-emerald-400 font-extrabold border-t border-slate-800 pt-1"><span>Pagamento do lote (líquido + complemento − ISS):</span><span id="ml-sum-liquido">R$ 0,00</span></div>
           </div>
         </div>
 
         <div class="pt-3 border-t border-slate-100 flex justify-end gap-2 flex-shrink-0">
-          <button type="button" onclick="closeModal('modal-nova-fatura')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Cancelar</button>
+          <button type="button" onclick="closeModal('modal-nova-fatura')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
           <button type="submit" id="btn-salvar-fatura" class="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold shadow-md">Concluir e Salvar Emissão</button>
         </div>
       </form>
@@ -1892,7 +1913,7 @@ th[data-sort-col] {
         </div>
 
         <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
-          <button type="button" onclick="closeModal('modal-vincular-deposito')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Cancelar</button>
+          <button type="button" onclick="closeModal('modal-vincular-deposito')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
           <button type="button" onclick="confirmarVinculacao()" class="px-5 py-2 bg-indigo-600 text-white rounded-xl font-semibold shadow-md">Confirmar rateio</button>
         </div>
       </div>
@@ -1930,6 +1951,9 @@ th[data-sort-col] {
             <span class="block font-bold text-rose-950">Abrir tréplica</span>
             <span class="text-[10px] text-rose-800">O convênio admite tréplica. A diferença sobe para a 3ª instância.</span>
           </button>
+        </div>
+        <div class="flex justify-end pt-1">
+          <button type="button" onclick="voltarDivergenciaRecurso()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
         </div>
       </div>
     </div>
@@ -2021,7 +2045,7 @@ th[data-sort-col] {
         </div>
 
         <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
-          <button type="button" onclick="closeModal('modal-abrir-recurso')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Cancelar</button>
+          <button type="button" onclick="closeModal('modal-abrir-recurso')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
           <button type="submit" class="px-5 py-2 bg-orange-600 text-white rounded-xl font-semibold">Salvar Defesa TISS</button>
         </div>
       </form>
@@ -2050,7 +2074,8 @@ th[data-sort-col] {
       </div>
       <div class="p-5 space-y-4 text-xs overflow-y-auto custom-scrollbar flex-1">
         <form id="form-equipe" onsubmit="salvarContaEquipe(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <input type="text" id="equipe-nome" required placeholder="Nome" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+          <input type="text" id="equipe-nome" required placeholder="Nome completo" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold sm:col-span-2">
+          <input type="text" id="equipe-ramal" placeholder="Ramal" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           <input type="email" id="equipe-email" required placeholder="E-mail" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           <input type="password" id="equipe-senha" required minlength="6" placeholder="Senha inicial (mín. 6)" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           <select id="equipe-perfil" required class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
@@ -2068,6 +2093,7 @@ th[data-sort-col] {
             <thead class="bg-slate-50 text-slate-500 uppercase text-[10px]">
               <tr>
                 <th class="p-2.5">Nome</th>
+                <th class="p-2.5">Ramal</th>
                 <th class="p-2.5">E-mail</th>
                 <th class="p-2.5">Perfil</th>
               </tr>
@@ -2076,6 +2102,36 @@ th[data-sort-col] {
           </table>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="modal-hospital" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
+        <div>
+          <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-hospital text-rose-300"></i> Cadastro do hospital</h3>
+          <p class="text-[11px] text-slate-400">Entra na assinatura de e-mail, WhatsApp e ligação.</p>
+        </div>
+        <button type="button" onclick="closeModal('modal-hospital')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="form-hospital" onsubmit="salvarHospital(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nome</label>
+          <input type="text" id="hosp-nome" required placeholder="Hospital Prontil" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">CNPJ</label>
+          <input type="text" id="hosp-cnpj" placeholder="00.000.000/0000-00" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Endereço</label>
+          <input type="text" id="hosp-endereco" placeholder="Rua, número, bairro, cidade" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="closeModal('modal-hospital')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
+          <button type="submit" class="px-4 py-2 bg-rose-700 text-white rounded-xl font-bold">Salvar</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -16922,17 +16978,26 @@ th[data-sort-col] {
     prazo_resposta_recurso_dias: 30,
     prazo_pagamento_pos_resposta_dias: 15,
     multi_lote: false,
+    retem_iss: false,
     replica_treplica: false,
     base_prazo_recurso: "APOS_RECEBIMENTO",
     base_prazo_resposta: "APOS_INICIO_RECURSO",
     base_prazo_pagamento: "APOS_RESPOSTA",
     contato_cobranca: emptyContatoCobranca()
   };
+  function normalizeHospital(raw) {
+    return {
+      nome: String(raw?.nome || "").trim(),
+      cnpj: String(raw?.cnpj || "").trim(),
+      endereco: String(raw?.endereco || "").trim()
+    };
+  }
   function normalizeConvenio(c2) {
     return {
       ...FALLBACK_CONVENIO,
       ...c2,
       nome: c2.nome,
+      retem_iss: !!c2.retem_iss,
       contato_cobranca: normalizeContatoCobranca(c2.contato_cobranca)
     };
   }
@@ -16963,8 +17028,11 @@ th[data-sort-col] {
     const canal = input.canal || contato.canal_preferencial || "EMAIL";
     const fat = input.fatura;
     const mov = input.mov;
-    const hospital = input.hospitalNome || "Hospital Demo \u2014 Concili.a";
+    const hospital = input.hospitalNome || "Hospital Prontil";
     const operador = input.operadorNome || "Equipe de Cobran\xE7a";
+    const ramal = (input.operadorRamal || "").trim();
+    const cnpj = (input.hospitalCnpj || "").trim();
+    const endereco = (input.hospitalEndereco || "").trim();
     const instancia = labelInstanciaCobranca(mov.instancia_recurso);
     const motivoAtraso = input.atrasoResposta && input.atrasoPagamento ? "prazo de resposta do recurso vencido e inadimpl\xEAncia de pagamento" : input.atrasoResposta ? "prazo de resposta do recurso vencido" : input.atrasoPagamento ? "inadimpl\xEAncia de pagamento ap\xF3s o prazo de cr\xE9dito" : "pend\xEAncia regulat\xF3ria em aberto";
     const saudacao = contato.responsavel_nome ? `Prezado(a) ${contato.responsavel_nome}` : `Prezada equipe de contas de ${conv.nome}`;
@@ -16987,7 +17055,9 @@ th[data-sort-col] {
 Solicitamos posicionamento sobre a conta hospitalar abaixo, com ${motivoAtraso}.
 
 IDENTIFICA\xC7\xC3O
-Hospital/credenciado: ${hospital}
+Hospital/credenciado: ${hospital}${cnpj ? `
+CNPJ: ${cnpj}` : ""}${endereco ? `
+Endere\xE7o: ${endereco}` : ""}
 Conv\xEAnio: ${conv.nome}
 NFS-e: ${fat.numero_nota}
 Remessa TISS: ${fat.numero_remessa || "-"}
@@ -17018,11 +17088,14 @@ Pedido: confirmar a an\xE1lise do protocolo e a previs\xE3o de cr\xE9dito do val
 Observa\xE7\xE3o do cadastro: ${contato.observacao}` : ""}
 
 Atenciosamente,
-${operador}
+${operador}${ramal ? `
+Ramal ${ramal}` : ""}
 Cobran\xE7a Hospitalar / RCM
-${hospital}`;
+${hospital}${cnpj ? `
+CNPJ ${cnpj}` : ""}${endereco ? `
+${endereco}` : ""}`;
     const primeiroNome = contato.responsavel_nome.split(" ")[0] || "";
-    const corpoWhatsapp = `Ol\xE1${primeiroNome ? ` ${primeiroNome}` : ""}, aqui \xE9 ${operador} (${hospital}).
+    const corpoWhatsapp = `Ol\xE1${primeiroNome ? ` ${primeiroNome}` : ""}, aqui \xE9 ${operador}${ramal ? `, ramal ${ramal}` : ""} (${hospital}).
 
 Cobran\xE7a TISS da ${fat.numero_nota} (${conv.nome}), lote ${fat.numero_lote || "-"}, protocolo ${mov.protocolo_recurso || "-"}${mov.titulo_recurso ? `, ${mov.titulo_recurso}` : ""}.
 Situa\xE7\xE3o: ${motivoAtraso}.
@@ -17030,7 +17103,7 @@ Valor em disputa: ${formatBRL(valorDisputa)}.
 Prazo resposta: ${formatDateBR(mov.data_limite_resposta)} | Cr\xE9dito: ${formatDateBR(mov.data_estimada_pagamento)}.
 
 Pode nos retornar com o posicionamento, por favor?`;
-    const roteiroTelefone = `1. Identifique-se: ${operador}, ${hospital}.
+    const roteiroTelefone = `1. Identifique-se: ${operador}, ${hospital}${ramal ? `, ramal ${ramal}` : ""}.${cnpj ? ` CNPJ ${cnpj}.` : ""}${endereco ? ` ${endereco}.` : ""}
 2. Fale com: ${contato.responsavel_nome || "setor de contas m\xE9dicas"} (${contato.responsavel_cargo || conv.nome}).
 3. Informe NF ${fat.numero_nota}, lote ${fat.numero_lote || "-"}, protocolo ${mov.protocolo_recurso || "-"}${mov.titulo_recurso ? `, recurso ${mov.titulo_recurso}` : ""}.
 4. Motivo da liga\xE7\xE3o: ${motivoAtraso}. Valor em disputa ${formatBRL(valorDisputa)}.${mov.anotacao_recurso ? `
@@ -17073,8 +17146,8 @@ Pode nos retornar com o posicionamento, por favor?`;
     const glosaSugerida = round2(Math.max(0, valFaturado - pagLiquido));
     const glosa = input.glosaOverride === null || input.glosaOverride === void 0 || Number.isNaN(input.glosaOverride) ? glosaSugerida : round2(Math.max(0, input.glosaOverride));
     const complemento = round2(input.complemento || 0);
-    const iss = round2(input.iss || 0);
-    const liquidoNf = round2(pagLiquido + complemento + iss);
+    const iss = round2(Math.max(0, input.iss || 0));
+    const liquidoNf = round2(Math.max(0, pagLiquido + complemento - iss));
     return {
       valFaturado,
       pagNormal,
@@ -17086,6 +17159,9 @@ Pode nos retornar com o posicionamento, por favor?`;
       liquidoNf,
       totalVinculos: round2(input.totalVinculos || 0)
     };
+  }
+  function liquidoAposIss(bruto, iss) {
+    return round2(Math.max(0, (bruto || 0) - Math.max(0, iss || 0)));
   }
   function calcularPrazosTiss(params) {
     const conv = params.convenio;
@@ -18335,6 +18411,7 @@ Pode nos retornar com o posicionamento, por favor?`;
     COBRANCA_REGISTRADA: "Cobran\xE7a registrada",
     CONVENIO_SALVO: "Conv\xEAnio salvo",
     CONVENIO_EXCLUIDO: "Conv\xEAnio exclu\xEDdo",
+    HOSPITAL_SALVO: "Hospital salvo",
     RBAC_SALVO: "Matriz RBAC salva",
     RBAC_RESTAURADO: "RBAC restaurado",
     DEMO_RESET: "Reset da demo"
@@ -43533,6 +43610,7 @@ This typically indicates that your device does not have a healthy Internet conne
   function createSeedData() {
     const data = {
       permissoes: JSON.parse(JSON.stringify(DEFAULT_PERMISSOES)),
+      hospital: { nome: "Hospital Prontil", cnpj: "", endereco: "" },
       convenios: [
         {
           nome: "Bradesco Sa\xFAde",
@@ -43542,6 +43620,7 @@ This typically indicates that your device does not have a healthy Internet conne
           prazo_resposta_recurso_dias: 30,
           prazo_pagamento_pos_resposta_dias: 15,
           multi_lote: true,
+          retem_iss: false,
           replica_treplica: true,
           base_prazo_recurso: "APOS_RECEBIMENTO",
           base_prazo_resposta: "APOS_INICIO_RECURSO",
@@ -43565,6 +43644,7 @@ This typically indicates that your device does not have a healthy Internet conne
           prazo_resposta_recurso_dias: 45,
           prazo_pagamento_pos_resposta_dias: 30,
           multi_lote: true,
+          retem_iss: false,
           replica_treplica: false,
           base_prazo_recurso: "APOS_RECEBIMENTO",
           base_prazo_resposta: "APOS_INICIO_RECURSO",
@@ -43588,6 +43668,7 @@ This typically indicates that your device does not have a healthy Internet conne
           prazo_resposta_recurso_dias: 30,
           prazo_pagamento_pos_resposta_dias: 15,
           multi_lote: false,
+          retem_iss: false,
           replica_treplica: true,
           base_prazo_recurso: "APOS_RECEBIMENTO",
           base_prazo_resposta: "APOS_INICIO_RECURSO",
@@ -43611,6 +43692,7 @@ This typically indicates that your device does not have a healthy Internet conne
           prazo_resposta_recurso_dias: 30,
           prazo_pagamento_pos_resposta_dias: 15,
           multi_lote: true,
+          retem_iss: false,
           replica_treplica: true,
           base_prazo_recurso: "APOS_RECEBIMENTO",
           base_prazo_resposta: "APOS_INICIO_RECURSO",
@@ -43960,7 +44042,8 @@ This typically indicates that your device does not have a healthy Internet conne
   var EMPTY_SESSION = {
     isLoggedIn: false,
     roleKey: "PERFIL_DIRETORIA",
-    customName: ""
+    customName: "",
+    ramal: ""
   };
   var SAVE_DEBOUNCE_MS = 700;
   var memoryCache = null;
@@ -44000,6 +44083,7 @@ This typically indicates that your device does not have a healthy Internet conne
     }
     const data = {
       permissoes: mergePermissoes(src.permissoes),
+      hospital: normalizeHospital(src.hospital),
       convenios: src.convenios.map((c2) => normalizeConvenio(c2)),
       faturas: src.faturas.map((f) => {
         const movs = (f.movimentacoes || []).map((m2) => {
@@ -44057,6 +44141,7 @@ This typically indicates that your device does not have a healthy Internet conne
     const seed = createSeedData();
     return {
       permissoes: seed.permissoes,
+      hospital: normalizeHospital(seed.hospital),
       convenios: [],
       faturas: [],
       depositos: [],
@@ -44176,7 +44261,8 @@ This typically indicates that your device does not have a healthy Internet conne
         return {
           isLoggedIn: current.isLoggedIn,
           roleKey: isRoleKey(current.roleKey) ? current.roleKey : "PERFIL_DIRETORIA",
-          customName: current.customName || ""
+          customName: current.customName || "",
+          ramal: current.ramal || ""
         };
       }
       const legacy = safeParse(localStorage.getItem(SESSION_KEY_LEGACY));
@@ -44184,7 +44270,8 @@ This typically indicates that your device does not have a healthy Internet conne
         const session = {
           isLoggedIn: legacy.isLoggedIn,
           roleKey: isRoleKey(legacy.roleKey) ? legacy.roleKey : "PERFIL_DIRETORIA",
-          customName: legacy.customName || ""
+          customName: legacy.customName || "",
+          ramal: legacy.ramal || ""
         };
         this.saveSession(session);
         return session;
@@ -44200,12 +44287,12 @@ This typically indicates that your device does not have a healthy Internet conne
     getCurrentRoleKey() {
       return this.getSession().roleKey || "PERFIL_DIRETORIA";
     },
-    setCurrentRole(roleKey, customName = "") {
+    setCurrentRole(roleKey, customName = "", ramal = "") {
       const session = this.getSession();
       session.roleKey = roleKey;
       session.isLoggedIn = true;
-      if (customName) session.customName = customName;
-      else if (!session.customName) session.customName = "";
+      session.customName = customName || "";
+      session.ramal = ramal || "";
       this.saveSession(session);
       return true;
     },
@@ -50438,6 +50525,7 @@ This typically indicates that your device does not have a healthy Internet conne
     return {
       uid: uid3,
       nome: String(raw.nome || ""),
+      ramal: String(raw.ramal || ""),
       email: String(raw.email || ""),
       role: raw.role,
       ativo: raw.ativo !== false
@@ -50451,6 +50539,7 @@ This typically indicates that your device does not have a healthy Internet conne
     if (!db2) throw new Error("Firestore indispon\xEDvel");
     await setDoc(doc(db2, "users", cred.user.uid), {
       nome: input.nome.trim(),
+      ramal: String(input.ramal || "").trim(),
       email: input.email.trim().toLowerCase(),
       role: "PERFIL_DIRETORIA",
       ativo: true,
@@ -50469,6 +50558,7 @@ This typically indicates that your device does not have a healthy Internet conne
       rows.push({
         uid: item.id,
         nome: String(raw.nome || ""),
+        ramal: String(raw.ramal || ""),
         email: String(raw.email || ""),
         role: raw.role,
         ativo: raw.ativo !== false
@@ -50485,6 +50575,7 @@ This typically indicates that your device does not have a healthy Internet conne
       if (!db2) throw new Error("Firestore indispon\xEDvel");
       await setDoc(doc(db2, "users", cred.user.uid), {
         nome: input.nome.trim(),
+        ramal: String(input.ramal || "").trim(),
         email: input.email.trim().toLowerCase(),
         role: input.role,
         ativo: true,
@@ -50800,7 +50891,7 @@ This typically indicates that your device does not have a healthy Internet conne
   function entrarComConta(conta) {
     closeModal("modal-login");
     DataService.sairSimulacao();
-    AuthService.setCurrentRole(conta.role, conta.nome || conta.email);
+    AuthService.setCurrentRole(conta.role, conta.nome || conta.email, conta.ramal || "");
     $2("screen-welcome")?.classList.add("hidden");
     switchTab("alertas");
     connectCloudAndRender();
@@ -50901,6 +50992,7 @@ This typically indicates that your device does not have a healthy Internet conne
           tbody.innerHTML = contas.map(
             (c2) => `<tr>
               <td class="p-2.5 font-semibold text-slate-800">${escapeHtml(c2.nome)}</td>
+              <td class="p-2.5 text-slate-600">${escapeHtml(c2.ramal || "-")}</td>
               <td class="p-2.5 text-slate-600">${escapeHtml(c2.email)}</td>
               <td class="p-2.5">${escapeHtml(ROLES_INFO[c2.role]?.label.replace("Perfil: ", "") || c2.role)}</td>
             </tr>`
@@ -50917,19 +51009,21 @@ This typically indicates that your device does not have a healthy Internet conne
       void (async () => {
         setAuthErro("equipe-erro", "");
         const nome = inputVal("equipe-nome").trim();
+        const ramal = inputVal("equipe-ramal").trim();
         const email = inputVal("equipe-email").trim();
         const senha = inputVal("equipe-senha");
         const role = inputVal("equipe-perfil");
         if (!nome || !email || senha.length < 6) {
-          setAuthErro("equipe-erro", "Nome, e-mail e senha (m\xEDnimo 6) s\xE3o obrigat\xF3rios.");
+          setAuthErro("equipe-erro", "Nome completo, e-mail e senha (m\xEDnimo 6) s\xE3o obrigat\xF3rios.");
           return;
         }
         try {
-          await criarContaEquipe({ nome, email, senha, role });
+          await criarContaEquipe({ nome, email, senha, role, ramal });
           const appData = DataService.getAppData();
           audit(appData, "LOGIN", `Criou o acesso de ${nome} (${email}).`, email, role);
           DataService.saveAppData(appData);
           setInput("equipe-nome", "");
+          setInput("equipe-ramal", "");
           setInput("equipe-email", "");
           setInput("equipe-senha", "");
           showToast("Acesso criado. A pessoa j\xE1 pode entrar com esse e-mail e senha.");
@@ -50938,6 +51032,39 @@ This typically indicates that your device does not have a healthy Internet conne
           setAuthErro("equipe-erro", mensagemAuth(err));
         }
       })();
+    });
+  }
+  function nomeOperadorAtual() {
+    const session = AuthService.getSession();
+    return session.customName || ROLES_INFO[session.roleKey]?.userName || "Equipe de Cobran\xE7a";
+  }
+  function abrirModalHospital() {
+    executarAcaoRole("canManagePermissions", () => {
+      const hospital = normalizeHospital(DataService.getAppData().hospital);
+      setInput("hosp-nome", hospital.nome);
+      setInput("hosp-cnpj", hospital.cnpj);
+      setInput("hosp-endereco", hospital.endereco);
+      openModal("modal-hospital");
+    });
+  }
+  function salvarHospital(e2) {
+    e2.preventDefault();
+    executarAcaoRole("canManagePermissions", () => {
+      const hospital = normalizeHospital({
+        nome: inputVal("hosp-nome"),
+        cnpj: inputVal("hosp-cnpj"),
+        endereco: inputVal("hosp-endereco")
+      });
+      if (!hospital.nome) {
+        showToast("Informe o nome do hospital.");
+        return;
+      }
+      const appData = DataService.getAppData();
+      appData.hospital = hospital;
+      audit(appData, "HOSPITAL_SALVO", `Atualizou o cadastro do hospital ${hospital.nome}.`, hospital.nome, hospital.cnpj || hospital.endereco);
+      DataService.saveAppData(appData);
+      closeModal("modal-hospital");
+      showToast("Cadastro do hospital salvo.");
     });
   }
   function switchTab(tabId) {
@@ -50979,6 +51106,7 @@ This typically indicates that your device does not have a healthy Internet conne
     }
     $2("btn-sidebar-rbac")?.classList.toggle("hidden", !AuthService.checkPermission("canManagePermissions"));
     $2("btn-sidebar-equipe")?.classList.toggle("hidden", !AuthService.checkPermission("canManagePermissions"));
+    $2("btn-sidebar-hospital")?.classList.toggle("hidden", !AuthService.checkPermission("canManagePermissions"));
     $2("nav-contabilidade")?.classList.toggle("hidden", !AuthService.checkPermission("canViewContabilidade"));
     $2("nav-supervisao")?.classList.toggle("hidden", !AuthService.checkPermission("canViewSupervisao"));
     renderCloudStatus();
@@ -51399,7 +51527,7 @@ This typically indicates that your device does not have a healthy Internet conne
     evs.push({
       data: f.data_emissao,
       titulo: "Emiss\xE3o da NFS-e",
-      detalhe: `${f.numero_nota} \xB7 remessa ${f.numero_remessa} \xB7 lote ${f.numero_lote || "-"} \xB7 ${formatBRL(f.valor_total)}`
+      detalhe: `${f.numero_nota} \xB7 remessa ${f.numero_remessa} \xB7 lote ${f.numero_lote || "-"} \xB7 ${formatBRL(f.valor_total)}${(f.detalhe_emissao?.iss || 0) > 9e-3 ? ` \xB7 ISS ${formatBRL(f.detalhe_emissao?.iss || 0)} \xB7 l\xEDquido ${formatBRL(liquidoAposIss(f.valor_total, f.detalhe_emissao?.iss || 0))}` : ""}`
     });
     (f.movimentacoes || []).forEach((m2) => {
       if (m2.data_movimentacao && (m2.valor_pago || 0) > 0) {
@@ -51437,6 +51565,13 @@ This typically indicates that your device does not have a healthy Internet conne
           detalhe: formatBRL(m2.valor_recuperado_recurso)
         });
       }
+    });
+    (f.detalhe_emissao?.carteira_anterior || []).forEach((linha) => {
+      evs.push({
+        data: f.data_emissao,
+        titulo: linha.destino === "RECURSO" ? "Rateio na emiss\xE3o: carteira anterior \xB7 recurso" : "Rateio na emiss\xE3o: carteira anterior \xB7 nota",
+        detalhe: `${linha.numero} \xB7 ${formatBRL(linha.valor)}. N\xE3o criou t\xEDtulo no Concili.a.`
+      });
     });
     depositos.forEach((d) => {
       (d.rateios || []).forEach((h) => {
@@ -52083,6 +52218,7 @@ This typically indicates that your device does not have a healthy Internet conne
         <div class="font-mono font-bold text-slate-800">${c2.prazo_fatura_dias}d / ${c2.prazo_solicitar_recurso_dias}d / ${c2.prazo_resposta_recurso_dias}d / ${c2.prazo_pagamento_pos_resposta_dias}d</div>
         <div class="flex items-center justify-center gap-1 mt-1">
           ${c2.multi_lote ? '<span class="px-1.5 py-0.2 text-[9px] bg-purple-100 text-purple-800 font-bold rounded">Multi-Lote</span>' : ""}
+          ${c2.retem_iss ? '<span class="px-1.5 py-0.2 text-[9px] bg-slate-200 text-slate-800 font-bold rounded">Ret\xE9m ISS</span>' : ""}
           ${c2.replica_treplica ? '<span class="px-1.5 py-0.2 text-[9px] bg-indigo-100 text-indigo-800 font-bold rounded">R\xE9plica/Tr\xE9plica</span>' : ""}
           ${c2.contato_cobranca?.responsavel_nome ? `<span class="px-1.5 py-0.2 text-[9px] bg-rose-100 text-rose-800 font-bold rounded">${escapeHtml(labelCanalCobranca(c2.contato_cobranca.canal_preferencial))}: ${escapeHtml(c2.contato_cobranca.responsavel_nome.split(" ")[0] || "")}</span>` : '<span class="px-1.5 py-0.2 text-[9px] bg-amber-100 text-amber-800 font-bold rounded">Sem contato RCM</span>'}
         </div>
@@ -52385,17 +52521,27 @@ This typically indicates that your device does not have a healthy Internet conne
   function isEditingFatura() {
     return !!inputVal("input-fatura-id");
   }
+  function issInformadoEmissao() {
+    const panel = $2("panel-iss-emissao");
+    if (!panel || panel.classList.contains("hidden")) return 0;
+    return moneyVal("input-iss");
+  }
   function handleConvenioEmissaoChange() {
     autoCalcularPrevisaoPgto();
     const convenioNome = inputVal("input-convenio");
     const panel = $2("panel-multi-lote-emissao");
-    if (!convenioNome || !panel) return;
+    const issPanel = $2("panel-iss-emissao");
+    if (!convenioNome) return;
     const conv = getConvenio(DataService.getAppData(), convenioNome);
-    if (conv.multi_lote && !isEditingFatura()) {
-      panel.classList.remove("hidden");
-      populateMultiLoteEmissaoDropdowns();
-    } else {
-      panel.classList.add("hidden");
+    issPanel?.classList.toggle("hidden", !conv.retem_iss);
+    if (!conv.retem_iss) setInput("input-iss", "");
+    if (panel) {
+      if (conv.multi_lote && !isEditingFatura()) {
+        panel.classList.remove("hidden");
+        populateMultiLoteEmissaoDropdowns();
+      } else {
+        panel.classList.add("hidden");
+      }
     }
     recalcularMultiLoteEmissao();
   }
@@ -52422,22 +52568,21 @@ This typically indicates that your device does not have a healthy Internet conne
       ajustesPacotes: moneyVal("ml-ajustes-pacotes"),
       glosaOverride: override,
       complemento: moneyVal("ml-complemento"),
-      iss: moneyVal("ml-iss"),
-      totalVinculos: sumClass("ml-nf-valor") + sumClass("ml-rec-valor")
+      iss: issInformadoEmissao(),
+      totalVinculos: sumClass("ml-nf-valor") + sumClass("ml-rec-valor") + sumClass("ml-ant-valor")
     });
     const elPagLiq = document.getElementById("ml-pagamento-liquido");
     if (elPagLiq) elPagLiq.value = formatBRLNumber(calc.pagLiquido);
     if (glosaEl && document.activeElement !== glosaEl) glosaEl.value = formatBRLNumber(calc.glosa);
     setText("ml-sum-bruto", formatBRL(calc.valFaturado));
-    setText("ml-sum-retencoes", formatBRL(Math.max(0, calc.pagLiquido + calc.complemento - calc.totalVinculos)));
+    setText("ml-sum-retencoes", formatBRL(Math.max(0, calc.liquidoNf - calc.totalVinculos)));
     setText("ml-sum-vinculos", formatBRL(calc.totalVinculos));
-    setText("ml-sum-iss", formatBRL(calc.iss));
     setText("ml-sum-liquido", formatBRL(calc.liquidoNf));
+    setText("iss-liquido", formatBRL(liquidoAposIss(valorBrutoTotal, issInformadoEmissao())));
     if (!panel || panel.classList.contains("hidden")) {
       setText("ml-sum-bruto", formatBRL(valFaturado));
       setText("ml-sum-retencoes", formatBRL(0));
       setText("ml-sum-vinculos", formatBRL(0));
-      setText("ml-sum-iss", formatBRL(0));
       setText("ml-sum-liquido", formatBRL(valFaturado));
     }
   }
@@ -52493,11 +52638,43 @@ This typically indicates that your device does not have a healthy Internet conne
     document.getElementById(rowId)?.remove();
     recalcularMultiLoteEmissao();
   }
+  function addMlAnteriorRow() {
+    const container = $2("ml-anterior-container");
+    if (!container) return;
+    const rowId = uid2("ml_row_ant");
+    const div = document.createElement("div");
+    div.id = rowId;
+    div.className = "ml-ant-row grid grid-cols-12 gap-1.5 items-center";
+    div.innerHTML = `
+    <div class="col-span-4">
+      <select class="ml-ant-destino w-full p-1.5 text-[11px] bg-white border border-slate-300 rounded-lg font-medium" onchange="recalcularMultiLoteEmissao()">
+        <option value="NF">Pagamento de nota</option>
+        <option value="RECURSO">Pagamento de recurso</option>
+      </select>
+    </div>
+    <div class="col-span-4"><input type="text" class="ml-ant-nota w-full p-1.5 text-[11px] bg-white border border-slate-300 rounded-lg font-semibold" placeholder="N\xFAmero" oninput="recalcularMultiLoteEmissao()"></div>
+    <div class="col-span-3"><input type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" class="ml-ant-valor money-br w-full p-1.5 text-[11px] bg-white border border-slate-300 rounded-lg font-semibold" oninput="onMoneyInput(this, recalcularMultiLoteEmissao)"></div>
+    <div class="col-span-1 text-center"><button type="button" onclick="removeMultiLoteRow('${rowId}')" class="text-rose-500 hover:text-rose-700 p-1" title="Remover"><i class="fa-solid fa-circle-xmark text-xs"></i></button></div>`;
+    container.appendChild(div);
+    recalcularMultiLoteEmissao();
+  }
+  function lerMlAnteriorDom() {
+    const linhas = [];
+    document.querySelectorAll(".ml-ant-row").forEach((row) => {
+      const destino = (row.querySelector(".ml-ant-destino")?.value || "NF") === "RECURSO" ? "RECURSO" : "NF";
+      const numero = (row.querySelector(".ml-ant-nota")?.value || "").trim();
+      const valor = parseBRL(row.querySelector(".ml-ant-valor")?.value || "");
+      if (valor > 9e-3 || numero) linhas.push({ destino, numero, valor: Math.round((valor + Number.EPSILON) * 100) / 100 });
+    });
+    return linhas;
+  }
   function populateMultiLoteEmissaoDropdowns() {
     const containerNfs = $2("ml-nfs-anteriores-container");
     const containerRecs = $2("ml-recursos-anteriores-container");
     if (containerNfs) containerNfs.innerHTML = "";
     if (containerRecs) containerRecs.innerHTML = "";
+    const containerAnt = $2("ml-anterior-container");
+    if (containerAnt) containerAnt.innerHTML = "";
     addNfAnteriorRow();
     addRecursoAnteriorRow();
   }
@@ -52505,6 +52682,9 @@ This typically indicates that your device does not have a healthy Internet conne
     $2("form-nova-fatura")?.reset();
     setInput("input-fatura-id", "");
     $2("panel-multi-lote-emissao")?.classList.add("hidden");
+    $2("panel-iss-emissao")?.classList.add("hidden");
+    const containerAnt = $2("ml-anterior-container");
+    if (containerAnt) containerAnt.innerHTML = "";
     const title = $2("lbl-modal-nova-fatura-title");
     if (title) title.innerHTML = `<i class="fa-solid fa-file-circle-plus text-indigo-400"></i> Cadastrar Nova Fatura / NFS-e`;
     setText("btn-salvar-fatura", "Concluir e Salvar Emiss\xE3o");
@@ -52529,6 +52709,8 @@ This typically indicates that your device does not have a healthy Internet conne
       setInput("input-data-emissao", fat.data_emissao);
       setInput("input-data-previsao", fat.data_previsao_pagamento);
       setMoney("input-valor-total", fat.valor_total);
+      handleConvenioEmissaoChange();
+      if ((fat.detalhe_emissao?.iss || 0) > 0) setMoney("input-iss", fat.detalhe_emissao?.iss || 0);
       $2("panel-multi-lote-emissao")?.classList.add("hidden");
       const title = $2("lbl-modal-nova-fatura-title");
       if (title) title.innerHTML = `<i class="fa-solid fa-file-pen text-indigo-400"></i> Editar Fatura / NFS-e`;
@@ -52550,6 +52732,11 @@ This typically indicates that your device does not have a healthy Internet conne
       const valTotal = moneyVal("input-valor-total");
       const appData = DataService.getAppData();
       const convObj = getConvenio(appData, convenio);
+      const iss = convObj.retem_iss ? issInformadoEmissao() : 0;
+      if (iss > valTotal + 9e-3) {
+        showToast(`O ISS (${formatBRL(iss)}) n\xE3o pode ser maior que o valor bruto da nota (${formatBRL(valTotal)}).`);
+        return;
+      }
       if (editId) {
         const fat = appData.faturas.find((f) => f.id === editId);
         if (!fat) return;
@@ -52560,6 +52747,18 @@ This typically indicates that your device does not have a healthy Internet conne
         fat.data_emissao = dataEmissao;
         fat.data_previsao_pagamento = dataPrev;
         fat.valor_total = valTotal;
+        if (iss > 9e-3 || fat.detalhe_emissao) {
+          fat.detalhe_emissao = {
+            pagamento_normal: fat.detalhe_emissao?.pagamento_normal || 0,
+            ajustes_pacotes: fat.detalhe_emissao?.ajustes_pacotes || 0,
+            pagamento_liquido: fat.detalhe_emissao?.pagamento_liquido || 0,
+            glosa: fat.detalhe_emissao?.glosa || 0,
+            complemento: fat.detalhe_emissao?.complemento || 0,
+            iss,
+            liquido_nf: liquidoAposIss(valTotal, iss),
+            carteira_anterior: fat.detalhe_emissao?.carteira_anterior || []
+          };
+        }
         recalculateFaturaSaldo(fat);
         audit(appData, "FATURA_EDITADA", `Editou a fatura ${nf}.`, nf, `${convenio} \xB7 ${formatBRL(valTotal)}`);
         DataService.saveAppData(appData);
@@ -52583,18 +52782,39 @@ This typically indicates that your device does not have a healthy Internet conne
         movimentacoes: []
       };
       const panel = $2("panel-multi-lote-emissao");
-      if (convObj.multi_lote && panel && !panel.classList.contains("hidden")) {
+      const multiAberto = !!(convObj.multi_lote && panel && !panel.classList.contains("hidden"));
+      const linhasAnt = multiAberto ? lerMlAnteriorDom() : [];
+      if (linhasAnt.some((l2) => l2.valor > 9e-3 && !l2.numero)) {
+        showToast("Na carteira anterior da emiss\xE3o, informe o n\xFAmero da nota ou do recurso.");
+        return;
+      }
+      if (linhasAnt.some((l2) => l2.numero && l2.valor <= 9e-3)) {
+        showToast("Na carteira anterior da emiss\xE3o, informe o valor deste rateio.");
+        return;
+      }
+      const totalAnterior = Math.round((linhasAnt.reduce((acc, l2) => acc + l2.valor, 0) + Number.EPSILON) * 100) / 100;
+      if (multiAberto) {
         const glosaEl = document.getElementById("ml-glosa");
-        const totalVinculos = sumClass("ml-nf-valor") + sumClass("ml-rec-valor");
+        const vinculosSistema = sumClass("ml-nf-valor") + sumClass("ml-rec-valor");
+        const totalVinculos = Math.round((vinculosSistema + totalAnterior + Number.EPSILON) * 100) / 100;
         const calc = calcularMultiLote({
           valFaturado: moneyVal("ml-val-faturado") || valTotal,
           pagNormal: moneyVal("ml-pagamento-normal"),
           ajustesPacotes: moneyVal("ml-ajustes-pacotes"),
           glosaOverride: glosaEl && glosaEl.value !== "" ? parseBRL(glosaEl.value) : null,
           complemento: moneyVal("ml-complemento"),
-          iss: moneyVal("ml-iss"),
+          iss,
           totalVinculos
         });
+        if (iss > calc.pagLiquido + calc.complemento + 9e-3) {
+          showToast(`O ISS (${formatBRL(iss)}) passa o pagamento do lote antes da reten\xE7\xE3o (${formatBRL(calc.pagLiquido + calc.complemento)}).`);
+          return;
+        }
+        const pagamentoLote = calc.liquidoNf;
+        if (totalVinculos > pagamentoLote + 9e-3) {
+          showToast(`Os v\xEDnculos (${formatBRL(totalVinculos)}) passam o pagamento do lote (${formatBRL(pagamentoLote)}).`);
+          return;
+        }
         novaFat.valor_total = calc.valFaturado || valTotal;
         novaFat.detalhe_emissao = {
           pagamento_normal: calc.pagNormal,
@@ -52602,12 +52822,12 @@ This typically indicates that your device does not have a healthy Internet conne
           pagamento_liquido: calc.pagLiquido,
           glosa: calc.glosa,
           complemento: calc.complemento,
-          iss: calc.iss,
-          liquido_nf: calc.liquidoNf
+          iss,
+          liquido_nf: calc.liquidoNf,
+          carteira_anterior: linhasAnt.filter((l2) => l2.valor > 9e-3 && l2.numero)
         };
-        const caixaBruto = Math.max(0, calc.pagLiquido + calc.complemento);
-        const caixaNova = Math.max(0, Math.round((caixaBruto - totalVinculos + Number.EPSILON) * 100) / 100);
-        const maxGlosa = Math.max(0, Math.round((novaFat.valor_total - caixaNova - calc.iss + Number.EPSILON) * 100) / 100);
+        const caixaNova = Math.max(0, Math.round((pagamentoLote - totalVinculos + Number.EPSILON) * 100) / 100);
+        const maxGlosa = Math.max(0, Math.round((novaFat.valor_total - caixaNova - iss + Number.EPSILON) * 100) / 100);
         const glosaEmissao = Math.min(calc.glosa, maxGlosa);
         if (caixaNova > 0 || glosaEmissao > 0) {
           const prazos = calcularPrazosTiss({ convenio: convObj, dataEmissao });
@@ -52626,7 +52846,7 @@ This typically indicates that your device does not have a healthy Internet conne
               data_envio_recurso: "",
               data_limite_resposta: prazos.dataLimiteResposta,
               data_estimada_pagamento: prazos.dataEstimadaPagamento,
-              observacao_rateio: `Rateio na emiss\xE3o. ISS ${formatBRL(calc.iss)} (reten\xE7\xE3o, n\xE3o entra em caixa). V\xEDnculos ${formatBRL(totalVinculos)} alocados em NFs/recursos anteriores.`
+              observacao_rateio: `Rateio na emiss\xE3o. ISS ${formatBRL(iss)} fora do caixa. V\xEDnculos ${formatBRL(totalVinculos)}, dos quais ${formatBRL(totalAnterior)} na carteira anterior.`
             })
           );
         }
@@ -52671,6 +52891,17 @@ This typically indicates that your device does not have a healthy Internet conne
             }
           }
         });
+      } else if (iss > 9e-3) {
+        novaFat.detalhe_emissao = {
+          pagamento_normal: 0,
+          ajustes_pacotes: 0,
+          pagamento_liquido: 0,
+          glosa: 0,
+          complemento: 0,
+          iss,
+          liquido_nf: liquidoAposIss(valTotal, iss),
+          carteira_anterior: []
+        };
       }
       recalculateFaturaSaldo(novaFat);
       appData.faturas.push(novaFat);
@@ -53225,6 +53456,11 @@ This typically indicates that your device does not have a healthy Internet conne
     $2("btn-div-treplica")?.classList.toggle("hidden", !(conv.replica_treplica && inst === "REPLICA"));
     openModal("modal-divergencia-recurso");
   }
+  function voltarDivergenciaRecurso() {
+    filaDivergenciaRecurso = [];
+    abrirAnaliseAposDivergencia = null;
+    closeModal("modal-divergencia-recurso");
+  }
   function adiarDivergenciaRecurso() {
     filaDivergenciaRecurso.shift();
     closeModal("modal-divergencia-recurso");
@@ -53454,7 +53690,8 @@ ${draft.corpo}`;
     const conv = getConvenio(appData, fat.convenio);
     const hoje = todayISO();
     const canal = inputVal("cob-canal") || conv.contato_cobranca.canal_preferencial;
-    const role = AuthService.getCurrentRoleKey();
+    const session = AuthService.getSession();
+    const hospital = normalizeHospital(appData.hospital);
     return montarMinutaCobranca({
       convenio: conv,
       fatura: fat,
@@ -53462,7 +53699,11 @@ ${draft.corpo}`;
       atrasoResposta: !!(mov.data_limite_resposta && mov.data_limite_resposta < hoje),
       atrasoPagamento: !!(mov.data_estimada_pagamento && mov.data_estimada_pagamento < hoje),
       canal,
-      operadorNome: ROLES_INFO[role]?.userName || "Equipe de Cobran\xE7a"
+      operadorNome: nomeOperadorAtual(),
+      operadorRamal: session.ramal,
+      hospitalNome: hospital.nome,
+      hospitalCnpj: hospital.cnpj,
+      hospitalEndereco: hospital.endereco
     });
   }
   function renderContatoCobrancaCard(draft, convenioNome) {
@@ -53605,7 +53846,7 @@ ${draft.corpo}`;
         movTarget.historico_cobranca = movTarget.historico_cobranca || [];
         movTarget.historico_cobranca.push({
           data: todayISO(),
-          operador: ROLES_INFO[AuthService.getCurrentRoleKey()]?.userName || AuthService.getCurrentRoleKey(),
+          operador: nomeOperadorAtual(),
           canal,
           resumo
         });
@@ -53629,8 +53870,10 @@ ${draft.corpo}`;
     setInput("conv-prazo-pgto-rec", c2.prazo_pagamento_pos_resposta_dias || 15);
     const ml = document.getElementById("conv-multi-lote");
     const rp = document.getElementById("conv-replica-treplica");
+    const iss = document.getElementById("conv-retem-iss");
     if (ml) ml.checked = !!c2.multi_lote;
     if (rp) rp.checked = !!c2.replica_treplica;
+    if (iss) iss.checked = !!c2.retem_iss;
     setInput("conv-base-recurso", c2.base_prazo_recurso || "APOS_RECEBIMENTO");
     setInput("conv-base-resposta", c2.base_prazo_resposta || "APOS_INICIO_RECURSO");
     setInput("conv-base-pagamento", c2.base_prazo_pagamento || "APOS_RESPOSTA");
@@ -53663,6 +53906,7 @@ ${draft.corpo}`;
         prazo_resposta_recurso_dias: parseInt(inputVal("conv-prazo-resp-rec"), 10) || 30,
         prazo_pagamento_pos_resposta_dias: parseInt(inputVal("conv-prazo-pgto-rec"), 10) || 15,
         multi_lote: !!document.getElementById("conv-multi-lote")?.checked,
+        retem_iss: !!document.getElementById("conv-retem-iss")?.checked,
         replica_treplica: !!document.getElementById("conv-replica-treplica")?.checked,
         base_prazo_recurso: inputVal("conv-base-recurso"),
         base_prazo_resposta: inputVal("conv-base-resposta"),
@@ -53933,6 +54177,8 @@ ${draft.corpo}`;
       fazerLogout,
       abrirModalEquipe,
       salvarContaEquipe,
+      abrirModalHospital,
+      salvarHospital,
       switchTab,
       openModal,
       closeModal,
@@ -53959,6 +54205,7 @@ ${draft.corpo}`;
       recalcularMultiLoteEmissao,
       addNfAnteriorRow,
       addRecursoAnteriorRow,
+      addMlAnteriorRow,
       removeMultiLoteRow,
       abrirModalVinculo,
       atualizarPreviewVinculo,
@@ -53970,6 +54217,7 @@ ${draft.corpo}`;
       onRateioNfEdit,
       decidirDivergenciaRecurso,
       adiarDivergenciaRecurso,
+      voltarDivergenciaRecurso,
       prepararModalRecurso,
       atualizarCalculoRecursoDiretoV6,
       salvarRecursoGlosa,
