@@ -206,7 +206,7 @@ th[data-sort-col] {
             </div>
           </div>
         </div>
-        <button type="button" onclick="openModal('modal-login')" class="shrink-0 mb-7 px-4 py-2 bg-[#f0c0d0] hover:bg-[#e7a9bd] text-[#5c2033] font-bold text-xs rounded-xl transition">Entrar</button>
+        <button type="button" onclick="abrirModalLogin()" class="shrink-0 mb-7 px-4 py-2 bg-[#f0c0d0] hover:bg-[#e7a9bd] text-[#5c2033] font-bold text-xs rounded-xl transition">Entrar</button>
       </div>
     </div>
 
@@ -235,11 +235,21 @@ th[data-sort-col] {
         </div>
         <p id="auth-login-erro" class="hidden text-[11px] font-semibold text-rose-300"></p>
         <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition">Entrar</button>
+        <button type="button" onclick="pedirRedefinicaoSenha()" class="w-full text-[11px] font-semibold text-slate-400 hover:text-white">Esqueci a senha</button>
       </form>
       <div class="pt-3 mt-3 border-t border-slate-800">
         <button type="button" onclick="entrarContaTeste()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-extrabold text-xs rounded-xl border border-slate-600 transition">Entrar com conta teste</button>
         <p class="text-[10px] text-slate-500 mt-2 text-center">Simulação. Não pede senha e não grava nada no banco.</p>
       </div>
+      <form id="form-primeira-diretoria" onsubmit="handleCadastrarUsuario(event)" class="hidden pt-3 mt-3 border-t border-slate-800 space-y-2.5 text-xs">
+        <p class="text-[11px] text-amber-200 font-semibold">Não há diretoria. Crie a primeira conta com um e-mail real. Depois disso, esta tela some.</p>
+        <input type="text" id="reg-nome" required placeholder="Nome completo" class="w-full p-3 bg-slate-800 border border-slate-700 text-white rounded-xl">
+        <input type="email" id="reg-email" required placeholder="E-mail real de login" class="w-full p-3 bg-slate-800 border border-slate-700 text-white rounded-xl">
+        <input type="password" id="reg-senha" required minlength="6" placeholder="Senha (mín. 6)" class="w-full p-3 bg-slate-800 border border-slate-700 text-white rounded-xl">
+        <input type="password" id="reg-senha-confirma" required minlength="6" placeholder="Confirmar senha" class="w-full p-3 bg-slate-800 border border-slate-700 text-white rounded-xl">
+        <p id="auth-reg-erro" class="hidden text-[11px] font-semibold text-rose-300"></p>
+        <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl">Criar diretoria</button>
+      </form>
     </div>
   </div>
 
@@ -399,6 +409,10 @@ th[data-sort-col] {
             </div>
           </div>
           <div class="flex items-center gap-1">
+            <button id="btn-alterar-senha" type="button" onclick="abrirModalSenha()" class="text-xs text-slate-300 hover:text-white bg-slate-800 p-1.5 rounded-lg border border-slate-700 hover:border-slate-500 transition flex items-center gap-1.5 px-2.5 py-1.5 font-bold" title="Alterar minha senha">
+              <i class="fa-solid fa-key"></i>
+              <span>Senha</span>
+            </button>
             <button onclick="fazerLogout()" class="text-xs text-rose-400 hover:text-white bg-rose-950/50 p-1.5 rounded-lg border border-rose-800/80 hover:border-rose-600 transition flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-bold" title="Sair / Encerrar Sessão">
               <i class="fa-solid fa-right-from-bracket"></i>
               <span>Sair</span>
@@ -2148,6 +2162,37 @@ th[data-sort-col] {
         <div class="flex justify-end gap-2 pt-1">
           <button type="button" onclick="closeModal('modal-hospital')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
           <button type="submit" class="px-4 py-2 bg-rose-700 text-white rounded-xl font-bold">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-senha" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
+        <div>
+          <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-key text-indigo-300"></i> Alterar minha senha</h3>
+          <p class="text-[11px] text-slate-400">Vale só para quem está logado. A diretoria não vê a senha nova.</p>
+        </div>
+        <button type="button" onclick="closeModal('modal-senha')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="form-senha" onsubmit="salvarNovaSenha(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Senha atual</label>
+          <input type="password" id="senha-atual" required autocomplete="current-password" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nova senha</label>
+          <input type="password" id="senha-nova" required minlength="6" autocomplete="new-password" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Confirmar nova senha</label>
+          <input type="password" id="senha-confirma" required minlength="6" autocomplete="new-password" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <p id="senha-erro" class="hidden text-[11px] font-semibold text-rose-600"></p>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="closeModal('modal-senha')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">Salvar senha</button>
         </div>
       </form>
     </div>
@@ -18436,6 +18481,7 @@ Pode nos retornar com o posicionamento, por favor?`;
     CONVENIO_EXCLUIDO: "Conv\xEAnio exclu\xEDdo",
     HOSPITAL_SALVO: "Hospital salvo",
     EQUIPE_EDITADA: "Equipe editada",
+    SENHA_ALTERADA: "Senha alterada",
     RBAC_SALVO: "Matriz RBAC salva",
     RBAC_RESTAURADO: "RBAC restaurado",
     DEMO_RESET: "Reset da demo"
@@ -47034,11 +47080,20 @@ This typically indicates that your device does not have a healthy Internet conne
       return debugFail("not implemented");
     }
   };
+  async function updateEmailPassword(auth, request) {
+    return _performApiRequest(auth, "POST", "/v1/accounts:update", request);
+  }
   async function linkEmailPassword(auth, request) {
     return _performApiRequest(auth, "POST", "/v1/accounts:signUp", request);
   }
   async function signInWithPassword(auth, request) {
     return _performSignInRequest(auth, "POST", "/v1/accounts:signInWithPassword", _addTidIfNecessary(auth, request));
+  }
+  async function sendOobCode(auth, request) {
+    return _performApiRequest(auth, "POST", "/v1/accounts:sendOobCode", _addTidIfNecessary(auth, request));
+  }
+  async function sendPasswordResetEmail$1(auth, request) {
+    return sendOobCode(auth, request);
   }
   async function signInWithEmailLink$1(auth, request) {
     return _performSignInRequest(auth, "POST", "/v1/accounts:signInWithEmailLink", _addTidIfNecessary(auth, request));
@@ -47954,11 +48009,78 @@ This typically indicates that your device does not have a healthy Internet conne
   async function signInWithCredential(auth, credential) {
     return _signInWithCredential(_castAuth(auth), credential);
   }
+  async function reauthenticateWithCredential(user, credential) {
+    return _reauthenticate(getModularInstance(user), credential);
+  }
+  function _setActionCodeSettingsOnRequest(auth, request, actionCodeSettings) {
+    _assert(
+      actionCodeSettings.url?.length > 0,
+      auth,
+      "invalid-continue-uri"
+      /* AuthErrorCode.INVALID_CONTINUE_URI */
+    );
+    _assert(
+      typeof actionCodeSettings.dynamicLinkDomain === "undefined" || actionCodeSettings.dynamicLinkDomain.length > 0,
+      auth,
+      "invalid-dynamic-link-domain"
+      /* AuthErrorCode.INVALID_DYNAMIC_LINK_DOMAIN */
+    );
+    _assert(
+      typeof actionCodeSettings.linkDomain === "undefined" || actionCodeSettings.linkDomain.length > 0,
+      auth,
+      "invalid-hosting-link-domain"
+      /* AuthErrorCode.INVALID_HOSTING_LINK_DOMAIN */
+    );
+    request.continueUrl = actionCodeSettings.url;
+    request.dynamicLinkDomain = actionCodeSettings.dynamicLinkDomain;
+    request.linkDomain = actionCodeSettings.linkDomain;
+    request.canHandleCodeInApp = actionCodeSettings.handleCodeInApp;
+    if (actionCodeSettings.iOS) {
+      _assert(
+        actionCodeSettings.iOS.bundleId.length > 0,
+        auth,
+        "missing-ios-bundle-id"
+        /* AuthErrorCode.MISSING_IOS_BUNDLE_ID */
+      );
+      request.iOSBundleId = actionCodeSettings.iOS.bundleId;
+    }
+    if (actionCodeSettings.android) {
+      _assert(
+        actionCodeSettings.android.packageName.length > 0,
+        auth,
+        "missing-android-pkg-name"
+        /* AuthErrorCode.MISSING_ANDROID_PACKAGE_NAME */
+      );
+      request.androidInstallApp = actionCodeSettings.android.installApp;
+      request.androidMinimumVersionCode = actionCodeSettings.android.minimumVersion;
+      request.androidPackageName = actionCodeSettings.android.packageName;
+    }
+  }
   async function recachePasswordPolicy(auth) {
     const authInternal = _castAuth(auth);
     if (authInternal._getPasswordPolicyInternal()) {
       await authInternal._updatePasswordPolicy();
     }
+  }
+  async function sendPasswordResetEmail(auth, email, actionCodeSettings) {
+    const authInternal = _castAuth(auth);
+    const request = {
+      requestType: "PASSWORD_RESET",
+      email,
+      clientType: "CLIENT_TYPE_WEB"
+      /* RecaptchaClientType.WEB */
+    };
+    if (actionCodeSettings) {
+      _setActionCodeSettingsOnRequest(authInternal, request, actionCodeSettings);
+    }
+    await handleRecaptchaFlow(
+      authInternal,
+      request,
+      "getOobCode",
+      sendPasswordResetEmail$1,
+      "EMAIL_PASSWORD_PROVIDER"
+      /* RecaptchaAuthProvider.EMAIL_PASSWORD_PROVIDER */
+    );
   }
   async function createUserWithEmailAndPassword(auth, email, password) {
     if (_isFirebaseServerApp(auth.app)) {
@@ -48000,6 +48122,29 @@ This typically indicates that your device does not have a healthy Internet conne
       }
       throw error;
     });
+  }
+  function updatePassword(user, newPassword) {
+    return updateEmailOrPassword(getModularInstance(user), null, newPassword);
+  }
+  async function updateEmailOrPassword(user, email, password) {
+    const { auth } = user;
+    const idToken = await user.getIdToken();
+    const request = {
+      idToken,
+      returnSecureToken: true
+    };
+    if (email) {
+      request.email = email;
+    }
+    if (password) {
+      request.password = password;
+    }
+    const response = await _logoutIfInvalidated(user, updateEmailPassword(auth, request));
+    await user._updateTokensIfNecessary(
+      response,
+      /* reload */
+      true
+    );
   }
   function onIdTokenChanged(auth, nextOrObserver, error, completed) {
     return getModularInstance(auth).onIdTokenChanged(nextOrObserver, error, completed);
@@ -50487,7 +50632,7 @@ This typically indicates that your device does not have a healthy Internet conne
   function mensagemAuth(err) {
     const code = err?.code || "";
     const msg = err instanceof Error ? err.message : String(err || "");
-    if (msg.includes("Diretoria j\xE1 existe")) return msg;
+    if (msg.includes("Diretoria j\xE1 existe") || msg.startsWith("Senha atual") || msg.includes("pelo menos 6") || msg.includes("Entre de novo") || msg.includes("Informe o e-mail")) return msg;
     if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found") || code.includes("invalid-email")) {
       return "E-mail ou senha incorretos.";
     }
@@ -50528,6 +50673,25 @@ This typically indicates that your device does not have a healthy Internet conne
     const firebaseApp = getFirebaseApp();
     if (!firebaseApp) return;
     await signOut(getAuth(firebaseApp));
+  }
+  async function alterarSenhaAtual(senhaAtual, senhaNova) {
+    const auth = authPrincipal();
+    const user = auth.currentUser;
+    if (!user?.email) throw new Error("Entre de novo para trocar a senha.");
+    if (senhaNova.length < 6) throw new Error("A senha precisa ter pelo menos 6 caracteres.");
+    try {
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, senhaAtual));
+    } catch (err) {
+      const code = err?.code || "";
+      if (code.includes("invalid-credential") || code.includes("wrong-password")) throw new Error("Senha atual incorreta.");
+      throw err;
+    }
+    await updatePassword(user, senhaNova);
+  }
+  async function enviarRedefinicaoSenha(email) {
+    const destino = email.trim();
+    if (!destino) throw new Error("Informe o e-mail de login.");
+    await sendPasswordResetEmail(authPrincipal(), destino);
   }
   async function primeiroAcessoAberto() {
     const db2 = getFirestoreDb();
@@ -50977,6 +51141,18 @@ This typically indicates that your device does not have a healthy Internet conne
       await sairDaConta().catch(() => void 0);
     }
   }
+  async function abrirModalLogin() {
+    setAuthErro("auth-login-erro", "");
+    setAuthErro("auth-reg-erro", "");
+    const form = $2("form-primeira-diretoria");
+    try {
+      const aberto = await primeiroAcessoAberto();
+      form?.classList.toggle("hidden", !aberto);
+    } catch {
+      form?.classList.add("hidden");
+    }
+    openModal("modal-login");
+  }
   async function handleLogin(e2) {
     e2.preventDefault();
     setAuthErro("auth-login-erro", "");
@@ -50992,8 +51168,13 @@ This typically indicates that your device does not have a healthy Internet conne
     const nome = inputVal("reg-nome").trim();
     const email = inputVal("reg-email").trim();
     const senha = inputVal("reg-senha");
+    const confirma = inputVal("reg-senha-confirma");
     if (!nome || !email || senha.length < 6) {
-      setAuthErro("auth-reg-erro", "Preencha nome, e-mail e uma senha com pelo menos 6 caracteres.");
+      setAuthErro("auth-reg-erro", "Preencha nome, e-mail real e uma senha com pelo menos 6 caracteres.");
+      return;
+    }
+    if (senha !== confirma) {
+      setAuthErro("auth-reg-erro", "A confirma\xE7\xE3o n\xE3o confere com a senha.");
       return;
     }
     try {
@@ -51014,6 +51195,65 @@ This typically indicates that your device does not have a healthy Internet conne
     AuthService.logout();
     if (!simulacao2) await sairDaConta();
     else $2("screen-welcome")?.classList.remove("hidden");
+  }
+  function abrirModalSenha() {
+    if (DataService.isSimulacao()) {
+      showToast("A conta teste n\xE3o tem senha.");
+      return;
+    }
+    setAuthErro("senha-erro", "");
+    setInput("senha-atual", "");
+    setInput("senha-nova", "");
+    setInput("senha-confirma", "");
+    openModal("modal-senha");
+  }
+  async function salvarNovaSenha(e2) {
+    e2.preventDefault();
+    setAuthErro("senha-erro", "");
+    if (DataService.isSimulacao()) {
+      setAuthErro("senha-erro", "A conta teste n\xE3o altera senha.");
+      return;
+    }
+    const atual = inputVal("senha-atual");
+    const nova = inputVal("senha-nova");
+    const confirma = inputVal("senha-confirma");
+    if (nova.length < 6) {
+      setAuthErro("senha-erro", "A nova senha precisa ter pelo menos 6 caracteres.");
+      return;
+    }
+    if (nova !== confirma) {
+      setAuthErro("senha-erro", "A confirma\xE7\xE3o n\xE3o confere com a nova senha.");
+      return;
+    }
+    if (nova === atual) {
+      setAuthErro("senha-erro", "Escolha uma senha diferente da atual.");
+      return;
+    }
+    try {
+      await alterarSenhaAtual(atual, nova);
+      const appData = DataService.getAppData();
+      audit(appData, "SENHA_ALTERADA", `${nomeOperadorAtual()} alterou a pr\xF3pria senha.`);
+      DataService.saveAppData(appData);
+      closeModal("modal-senha");
+      showToast("Senha alterada. No pr\xF3ximo acesso, use a nova.");
+    } catch (err) {
+      setAuthErro("senha-erro", mensagemAuth(err));
+    }
+  }
+  async function pedirRedefinicaoSenha() {
+    setAuthErro("auth-login-erro", "");
+    const email = inputVal("login-email").trim();
+    if (!email) {
+      setAuthErro("auth-login-erro", "Digite o e-mail de login para receber o link.");
+      return;
+    }
+    try {
+      await enviarRedefinicaoSenha(email);
+      setAuthErro("auth-login-erro", "");
+      showToast("Se esse e-mail tiver conta, o Firebase enviou o link para trocar a senha.");
+    } catch (err) {
+      setAuthErro("auth-login-erro", mensagemAuth(err));
+    }
   }
   function entrarContaTeste() {
     closeModal("modal-login");
@@ -51207,6 +51447,7 @@ This typically indicates that your device does not have a healthy Internet conne
     $2("btn-sidebar-hospital")?.classList.toggle("hidden", !AuthService.checkPermission("canManagePermissions"));
     $2("nav-contabilidade")?.classList.toggle("hidden", !AuthService.checkPermission("canViewContabilidade"));
     $2("nav-supervisao")?.classList.toggle("hidden", !AuthService.checkPermission("canViewSupervisao"));
+    $2("btn-alterar-senha")?.classList.toggle("hidden", DataService.isSimulacao());
     renderCloudStatus();
   }
   function populateConvenioDropdowns() {
@@ -54284,9 +54525,13 @@ ${draft.corpo}`;
     const api = {
       switchAuthTab,
       handleLogin,
+      abrirModalLogin,
       entrarContaTeste,
       handleCadastrarUsuario,
       fazerLogout,
+      abrirModalSenha,
+      salvarNovaSenha,
+      pedirRedefinicaoSenha,
       abrirModalEquipe,
       salvarContaEquipe,
       editarContaEquipe,
