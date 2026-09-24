@@ -2064,7 +2064,7 @@ th[data-sort-col] {
   </div>
 
   <div id="modal-equipe" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
       <div class="p-5 bg-slate-900 text-white flex justify-between items-center flex-shrink-0">
         <div>
           <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-users text-indigo-400"></i> Equipe</h3>
@@ -2076,7 +2076,8 @@ th[data-sort-col] {
         <form id="form-equipe" onsubmit="salvarContaEquipe(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <input type="text" id="equipe-nome" required placeholder="Nome completo" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold sm:col-span-2">
           <input type="text" id="equipe-ramal" placeholder="Ramal" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-          <input type="email" id="equipe-email" required placeholder="E-mail" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+          <input type="email" id="equipe-contato" placeholder="E-mail de contato" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+          <input type="email" id="equipe-email" required placeholder="E-mail de login" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           <input type="password" id="equipe-senha" required minlength="6" placeholder="Senha inicial (mín. 6)" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           <select id="equipe-perfil" required class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
             <option value="PERFIL_FINANCEIRO">Financeiro</option>
@@ -2088,14 +2089,31 @@ th[data-sort-col] {
           <button type="submit" class="sm:col-span-2 py-2.5 bg-indigo-600 text-white font-bold rounded-xl">Criar acesso</button>
         </form>
         <p id="equipe-erro" class="hidden text-[11px] font-semibold text-rose-600"></p>
+        <form id="panel-equipe-editar" onsubmit="salvarEdicaoEquipe(event)" class="hidden rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+          <p class="font-bold text-slate-800">Editar cadastro</p>
+          <p class="text-[11px] text-slate-500">O e-mail de login não muda. Só a diretoria edita nome, ramal e e-mail de contato.</p>
+          <input type="hidden" id="equipe-edit-uid">
+          <input type="email" id="equipe-edit-login" readonly class="w-full p-2.5 bg-slate-200 border border-slate-200 rounded-xl text-slate-600">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input type="text" id="equipe-edit-nome" required placeholder="Nome completo" class="sm:col-span-2 p-2.5 bg-white border border-slate-200 rounded-xl font-semibold">
+            <input type="text" id="equipe-edit-ramal" placeholder="Ramal" class="p-2.5 bg-white border border-slate-200 rounded-xl">
+            <input type="email" id="equipe-edit-contato" placeholder="E-mail de contato" class="p-2.5 bg-white border border-slate-200 rounded-xl">
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="cancelarEdicaoEquipe()" class="px-3 py-2 bg-white border border-slate-200 rounded-xl font-semibold">Voltar</button>
+            <button type="submit" class="px-3 py-2 bg-slate-900 text-white rounded-xl font-bold">Salvar cadastro</button>
+          </div>
+        </form>
         <div class="border border-slate-200 rounded-xl overflow-hidden">
           <table class="w-full text-left">
             <thead class="bg-slate-50 text-slate-500 uppercase text-[10px]">
               <tr>
                 <th class="p-2.5">Nome</th>
                 <th class="p-2.5">Ramal</th>
-                <th class="p-2.5">E-mail</th>
+                <th class="p-2.5">Login</th>
+                <th class="p-2.5">Contato</th>
                 <th class="p-2.5">Perfil</th>
+                <th class="p-2.5 text-right">Ação</th>
               </tr>
             </thead>
             <tbody id="tbody-equipe" class="divide-y divide-slate-100"></tbody>
@@ -17031,6 +17049,7 @@ th[data-sort-col] {
     const hospital = input.hospitalNome || "Hospital Prontil";
     const operador = input.operadorNome || "Equipe de Cobran\xE7a";
     const ramal = (input.operadorRamal || "").trim();
+    const emailOperador = (input.operadorEmail || "").trim();
     const cnpj = (input.hospitalCnpj || "").trim();
     const endereco = (input.hospitalEndereco || "").trim();
     const instancia = labelInstanciaCobranca(mov.instancia_recurso);
@@ -17089,7 +17108,8 @@ Observa\xE7\xE3o do cadastro: ${contato.observacao}` : ""}
 
 Atenciosamente,
 ${operador}${ramal ? `
-Ramal ${ramal}` : ""}
+Ramal ${ramal}` : ""}${emailOperador ? `
+E-mail ${emailOperador}` : ""}
 Cobran\xE7a Hospitalar / RCM
 ${hospital}${cnpj ? `
 CNPJ ${cnpj}` : ""}${endereco ? `
@@ -17103,7 +17123,7 @@ Valor em disputa: ${formatBRL(valorDisputa)}.
 Prazo resposta: ${formatDateBR(mov.data_limite_resposta)} | Cr\xE9dito: ${formatDateBR(mov.data_estimada_pagamento)}.
 
 Pode nos retornar com o posicionamento, por favor?`;
-    const roteiroTelefone = `1. Identifique-se: ${operador}, ${hospital}${ramal ? `, ramal ${ramal}` : ""}.${cnpj ? ` CNPJ ${cnpj}.` : ""}${endereco ? ` ${endereco}.` : ""}
+    const roteiroTelefone = `1. Identifique-se: ${operador}, ${hospital}${ramal ? `, ramal ${ramal}` : ""}${emailOperador ? `, e-mail ${emailOperador}` : ""}.${cnpj ? ` CNPJ ${cnpj}.` : ""}${endereco ? ` ${endereco}.` : ""}
 2. Fale com: ${contato.responsavel_nome || "setor de contas m\xE9dicas"} (${contato.responsavel_cargo || conv.nome}).
 3. Informe NF ${fat.numero_nota}, lote ${fat.numero_lote || "-"}, protocolo ${mov.protocolo_recurso || "-"}${mov.titulo_recurso ? `, recurso ${mov.titulo_recurso}` : ""}.
 4. Motivo da liga\xE7\xE3o: ${motivoAtraso}. Valor em disputa ${formatBRL(valorDisputa)}.${mov.anotacao_recurso ? `
@@ -18412,6 +18432,7 @@ Pode nos retornar com o posicionamento, por favor?`;
     CONVENIO_SALVO: "Conv\xEAnio salvo",
     CONVENIO_EXCLUIDO: "Conv\xEAnio exclu\xEDdo",
     HOSPITAL_SALVO: "Hospital salvo",
+    EQUIPE_EDITADA: "Equipe editada",
     RBAC_SALVO: "Matriz RBAC salva",
     RBAC_RESTAURADO: "RBAC restaurado",
     DEMO_RESET: "Reset da demo"
@@ -44043,7 +44064,8 @@ This typically indicates that your device does not have a healthy Internet conne
     isLoggedIn: false,
     roleKey: "PERFIL_DIRETORIA",
     customName: "",
-    ramal: ""
+    ramal: "",
+    emailContato: ""
   };
   var SAVE_DEBOUNCE_MS = 700;
   var memoryCache = null;
@@ -44262,7 +44284,8 @@ This typically indicates that your device does not have a healthy Internet conne
           isLoggedIn: current.isLoggedIn,
           roleKey: isRoleKey(current.roleKey) ? current.roleKey : "PERFIL_DIRETORIA",
           customName: current.customName || "",
-          ramal: current.ramal || ""
+          ramal: current.ramal || "",
+          emailContato: current.emailContato || ""
         };
       }
       const legacy = safeParse(localStorage.getItem(SESSION_KEY_LEGACY));
@@ -44271,7 +44294,8 @@ This typically indicates that your device does not have a healthy Internet conne
           isLoggedIn: legacy.isLoggedIn,
           roleKey: isRoleKey(legacy.roleKey) ? legacy.roleKey : "PERFIL_DIRETORIA",
           customName: legacy.customName || "",
-          ramal: legacy.ramal || ""
+          ramal: legacy.ramal || "",
+          emailContato: legacy.emailContato || ""
         };
         this.saveSession(session);
         return session;
@@ -44287,12 +44311,13 @@ This typically indicates that your device does not have a healthy Internet conne
     getCurrentRoleKey() {
       return this.getSession().roleKey || "PERFIL_DIRETORIA";
     },
-    setCurrentRole(roleKey, customName = "", ramal = "") {
+    setCurrentRole(roleKey, customName = "", ramal = "", emailContato = "") {
       const session = this.getSession();
       session.roleKey = roleKey;
       session.isLoggedIn = true;
       session.customName = customName || "";
       session.ramal = ramal || "";
+      session.emailContato = emailContato || "";
       this.saveSession(session);
       return true;
     },
@@ -50527,6 +50552,7 @@ This typically indicates that your device does not have a healthy Internet conne
       nome: String(raw.nome || ""),
       ramal: String(raw.ramal || ""),
       email: String(raw.email || ""),
+      emailContato: String(raw.emailContato || ""),
       role: raw.role,
       ativo: raw.ativo !== false
     };
@@ -50541,6 +50567,7 @@ This typically indicates that your device does not have a healthy Internet conne
       nome: input.nome.trim(),
       ramal: String(input.ramal || "").trim(),
       email: input.email.trim().toLowerCase(),
+      emailContato: "",
       role: "PERFIL_DIRETORIA",
       ativo: true,
       criadoEm: Date.now()
@@ -50560,6 +50587,7 @@ This typically indicates that your device does not have a healthy Internet conne
         nome: String(raw.nome || ""),
         ramal: String(raw.ramal || ""),
         email: String(raw.email || ""),
+        emailContato: String(raw.emailContato || ""),
         role: raw.role,
         ativo: raw.ativo !== false
       });
@@ -50577,6 +50605,7 @@ This typically indicates that your device does not have a healthy Internet conne
         nome: input.nome.trim(),
         ramal: String(input.ramal || "").trim(),
         email: input.email.trim().toLowerCase(),
+        emailContato: String(input.emailContato || "").trim().toLowerCase(),
         role: input.role,
         ativo: true,
         criadoEm: Date.now()
@@ -50584,6 +50613,21 @@ This typically indicates that your device does not have a healthy Internet conne
     } finally {
       await signOut(secundario);
     }
+  }
+  async function atualizarContaEquipe(input) {
+    const db2 = getFirestoreDb();
+    if (!db2) throw new Error("Firestore indispon\xEDvel");
+    const nome = input.nome.trim();
+    if (!nome) throw new Error("Informe o nome completo.");
+    await setDoc(
+      doc(db2, "users", input.uid),
+      {
+        nome,
+        ramal: input.ramal.trim(),
+        emailContato: input.emailContato.trim().toLowerCase()
+      },
+      { merge: true }
+    );
   }
 
   // src/lib/concilia/boot.ts
@@ -50891,7 +50935,7 @@ This typically indicates that your device does not have a healthy Internet conne
   function entrarComConta(conta) {
     closeModal("modal-login");
     DataService.sairSimulacao();
-    AuthService.setCurrentRole(conta.role, conta.nome || conta.email, conta.ramal || "");
+    AuthService.setCurrentRole(conta.role, conta.nome || conta.email, conta.ramal || "", conta.emailContato || "");
     $2("screen-welcome")?.classList.add("hidden");
     switchTab("alertas");
     connectCloudAndRender();
@@ -50979,22 +51023,27 @@ This typically indicates that your device does not have a healthy Internet conne
     renderAllViews();
     renderCloudStatus();
   }
+  var equipeCache = [];
   async function abrirModalEquipe() {
     executarAcaoRole("canManagePermissions", () => {
       void (async () => {
         setAuthErro("equipe-erro", "");
+        $2("panel-equipe-editar")?.classList.add("hidden");
         const tbody = $2("tbody-equipe");
         if (tbody) tbody.innerHTML = "";
         openModal("modal-equipe");
         try {
           const contas = await listarEquipe();
+          equipeCache = contas;
           if (!tbody) return;
           tbody.innerHTML = contas.map(
             (c2) => `<tr>
               <td class="p-2.5 font-semibold text-slate-800">${escapeHtml(c2.nome)}</td>
               <td class="p-2.5 text-slate-600">${escapeHtml(c2.ramal || "-")}</td>
               <td class="p-2.5 text-slate-600">${escapeHtml(c2.email)}</td>
+              <td class="p-2.5 text-slate-600">${escapeHtml(c2.emailContato || "-")}</td>
               <td class="p-2.5">${escapeHtml(ROLES_INFO[c2.role]?.label.replace("Perfil: ", "") || c2.role)}</td>
+              <td class="p-2.5 text-right"><button type="button" onclick="editarContaEquipe('${c2.uid}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg">Editar</button></td>
             </tr>`
           ).join("");
         } catch (err) {
@@ -51011,22 +51060,68 @@ This typically indicates that your device does not have a healthy Internet conne
         const nome = inputVal("equipe-nome").trim();
         const ramal = inputVal("equipe-ramal").trim();
         const email = inputVal("equipe-email").trim();
+        const emailContato = inputVal("equipe-contato").trim();
         const senha = inputVal("equipe-senha");
         const role = inputVal("equipe-perfil");
         if (!nome || !email || senha.length < 6) {
-          setAuthErro("equipe-erro", "Nome completo, e-mail e senha (m\xEDnimo 6) s\xE3o obrigat\xF3rios.");
+          setAuthErro("equipe-erro", "Nome completo, e-mail de login e senha (m\xEDnimo 6) s\xE3o obrigat\xF3rios.");
           return;
         }
         try {
-          await criarContaEquipe({ nome, email, senha, role, ramal });
+          await criarContaEquipe({ nome, email, senha, role, ramal, emailContato });
           const appData = DataService.getAppData();
           audit(appData, "LOGIN", `Criou o acesso de ${nome} (${email}).`, email, role);
           DataService.saveAppData(appData);
           setInput("equipe-nome", "");
           setInput("equipe-ramal", "");
           setInput("equipe-email", "");
+          setInput("equipe-contato", "");
           setInput("equipe-senha", "");
           showToast("Acesso criado. A pessoa j\xE1 pode entrar com esse e-mail e senha.");
+          await abrirModalEquipe();
+        } catch (err) {
+          setAuthErro("equipe-erro", mensagemAuth(err));
+        }
+      })();
+    });
+  }
+  function editarContaEquipe(uid3) {
+    const conta = equipeCache.find((c2) => c2.uid === uid3);
+    if (!conta) return;
+    setInput("equipe-edit-uid", conta.uid);
+    setInput("equipe-edit-login", conta.email);
+    setInput("equipe-edit-nome", conta.nome);
+    setInput("equipe-edit-ramal", conta.ramal || "");
+    setInput("equipe-edit-contato", conta.emailContato || "");
+    $2("panel-equipe-editar")?.classList.remove("hidden");
+  }
+  function cancelarEdicaoEquipe() {
+    setInput("equipe-edit-uid", "");
+    $2("panel-equipe-editar")?.classList.add("hidden");
+  }
+  async function salvarEdicaoEquipe(e2) {
+    e2.preventDefault();
+    executarAcaoRole("canManagePermissions", () => {
+      void (async () => {
+        setAuthErro("equipe-erro", "");
+        const uid3 = inputVal("equipe-edit-uid");
+        const nome = inputVal("equipe-edit-nome").trim();
+        const ramal = inputVal("equipe-edit-ramal").trim();
+        const emailContato = inputVal("equipe-edit-contato").trim();
+        const login = inputVal("equipe-edit-login");
+        if (!uid3 || !nome) {
+          setAuthErro("equipe-erro", "Informe o nome completo.");
+          return;
+        }
+        try {
+          await atualizarContaEquipe({ uid: uid3, nome, ramal, emailContato });
+          if (uid3 === contaAtivaUid) AuthService.setCurrentRole(AuthService.getCurrentRoleKey(), nome, ramal, emailContato);
+          const appData = DataService.getAppData();
+          audit(appData, "EQUIPE_EDITADA", `Editou o cadastro de ${nome}.`, login, `Ramal ${ramal || "-"} \xB7 contato ${emailContato || "-"}`);
+          DataService.saveAppData(appData);
+          cancelarEdicaoEquipe();
+          renderRoleUI();
+          showToast("Cadastro atualizado. O e-mail de login n\xE3o mudou.");
           await abrirModalEquipe();
         } catch (err) {
           setAuthErro("equipe-erro", mensagemAuth(err));
@@ -53701,6 +53796,7 @@ ${draft.corpo}`;
       canal,
       operadorNome: nomeOperadorAtual(),
       operadorRamal: session.ramal,
+      operadorEmail: session.emailContato,
       hospitalNome: hospital.nome,
       hospitalCnpj: hospital.cnpj,
       hospitalEndereco: hospital.endereco
@@ -54177,6 +54273,9 @@ ${draft.corpo}`;
       fazerLogout,
       abrirModalEquipe,
       salvarContaEquipe,
+      editarContaEquipe,
+      cancelarEdicaoEquipe,
+      salvarEdicaoEquipe,
       abrirModalHospital,
       salvarHospital,
       switchTab,
