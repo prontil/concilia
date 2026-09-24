@@ -17015,12 +17015,15 @@ th[data-sort-col] {
       ...FALLBACK_CONVENIO,
       ...c2,
       nome: c2.nome,
+      multi_lote: !!c2.multi_lote,
       retem_iss: !!c2.retem_iss,
+      replica_treplica: !!c2.replica_treplica,
       contato_cobranca: normalizeContatoCobranca(c2.contato_cobranca)
     };
   }
   function getConvenio(appData, nome) {
-    const found = (appData.convenios || []).find((c2) => c2.nome === nome);
+    const key = (nome || "").trim().toLowerCase();
+    const found = (appData.convenios || []).find((c2) => c2.nome.trim().toLowerCase() === key);
     return normalizeConvenio(found || { ...FALLBACK_CONVENIO, nome: nome || "Geral" });
   }
   function digitsWhatsApp(value) {
@@ -51231,8 +51234,8 @@ This typically indicates that your device does not have a healthy Internet conne
       const el = document.getElementById(id);
       if (!el) return;
       const val = el.value;
-      el.innerHTML = opts;
-      if (val) el.value = val;
+      el.innerHTML = `<option value="">Selecione o conv\xEAnio</option>${opts}`;
+      el.value = val && Array.from(el.options).some((opt) => opt.value === val) ? val : "";
     });
   }
   function escapeHtml(value) {
@@ -52626,7 +52629,12 @@ This typically indicates that your device does not have a healthy Internet conne
     const convenioNome = inputVal("input-convenio");
     const panel = $2("panel-multi-lote-emissao");
     const issPanel = $2("panel-iss-emissao");
-    if (!convenioNome) return;
+    if (!convenioNome) {
+      panel?.classList.add("hidden");
+      issPanel?.classList.add("hidden");
+      setInput("input-iss", "");
+      return;
+    }
     const conv = getConvenio(DataService.getAppData(), convenioNome);
     issPanel?.classList.toggle("hidden", !conv.retem_iss);
     if (!conv.retem_iss) setInput("input-iss", "");
@@ -52788,6 +52796,7 @@ This typically indicates that your device does not have a healthy Internet conne
     executarAcaoRole("canAddFatura", () => {
       resetFaturaForm();
       populateConvenioDropdowns();
+      handleConvenioEmissaoChange();
       openModal("modal-nova-fatura");
     });
   }
@@ -53986,6 +53995,12 @@ ${draft.corpo}`;
   function cancelarEdicaoConvenio() {
     $2("form-convenio")?.reset();
     setInput("conv-nome-original", "");
+    const ml = document.getElementById("conv-multi-lote");
+    const rp = document.getElementById("conv-replica-treplica");
+    const iss = document.getElementById("conv-retem-iss");
+    if (ml) ml.checked = false;
+    if (rp) rp.checked = false;
+    if (iss) iss.checked = false;
     setText("lbl-form-convenio-title", "Cadastrar Nova Operadora / Conv\xEAnio");
   }
   function salvarConvenio(e2) {
@@ -54062,6 +54077,7 @@ ${draft.corpo}`;
         return;
       }
       appData.convenios = appData.convenios.filter((c2) => c2.nome !== nome);
+      if (inputVal("conv-nome-original") === nome || inputVal("conv-nome").trim() === nome) cancelarEdicaoConvenio();
       audit(appData, "CONVENIO_EXCLUIDO", `Excluiu conv\xEAnio ${nome}.`, nome);
       DataService.saveAppData(appData);
       renderConveniosTable();
