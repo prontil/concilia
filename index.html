@@ -1812,7 +1812,7 @@ th[data-sort-col] {
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
             <div>
-              <label class="block font-semibold text-amber-800 mb-1">Glosa (= 1 - 4) [Editável -> Irá para Recurso]</label>
+              <label class="block font-semibold text-amber-800 mb-1">Glosa do demonstrativo (1 − 4). Vai para recurso de glosa, como SEM RECURSO.</label>
               <input type="text" inputmode="decimal" autocomplete="off" id="ml-glosa" placeholder="0,00" oninput="onMoneyInput(this, recalcularMultiLoteEmissao)" class="money-br w-full p-2 bg-amber-50 border border-amber-300 rounded-xl font-bold text-amber-900">
             </div>
 
@@ -1864,7 +1864,8 @@ th[data-sort-col] {
             <div class="flex justify-between text-slate-300"><span>Valor Faturado Bruto:</span><span id="ml-sum-bruto" class="font-bold text-white">R$ 0,00</span></div>
             <div class="flex justify-between text-emerald-400"><span>Caixa desta NF (pagamento do lote − vínculos):</span><span id="ml-sum-retencoes">R$ 0,00</span></div>
             <div class="flex justify-between text-indigo-300"><span>Vínculos / abatimentos (notas, recursos e carteira anterior):</span><span id="ml-sum-vinculos">R$ 0,00</span></div>
-            <div class="flex justify-between text-emerald-400 font-extrabold border-t border-slate-800 pt-1"><span>Pagamento do lote (líquido + complemento − ISS):</span><span id="ml-sum-liquido">R$ 0,00</span></div>
+            <div class="flex justify-between text-emerald-400 font-extrabold border-t border-slate-800 pt-1"><span>Faturado da nota (líquido + complemento − ISS):</span><span id="ml-sum-liquido">R$ 0,00</span></div>
+            <p class="text-[10px] text-slate-400 leading-snug pt-1">O financeiro recebe este valor. O depósito cai igual à nota. A glosa vai para recurso e pode ser paga, no todo ou em parte, na próxima emissão, no vínculo de recurso anterior.</p>
           </div>
         </div>
 
@@ -17282,10 +17283,14 @@ Pode nos retornar com o posicionamento, por favor?`;
     return { valorBruto, valorPago, glosaBruta, glosaAceita, valorRecuperado, valorRecursado };
   }
   function valorCaixaMovimentacao(m2) {
+    if (m2.glosa_emissao) return round2(m2.valor_pago || 0);
     return round2((m2.valor_pago || 0) + (m2.valor_recuperado_recurso || 0));
   }
   function valorIssFatura(fatura2) {
-    return round2(Math.max(0, fatura2.detalhe_emissao?.iss || 0));
+    const d = fatura2.detalhe_emissao;
+    const lote = !!d && Math.abs((fatura2.valor_total || 0) - (d.liquido_nf || 0)) < 0.02 && ((d.pagamento_normal || 0) > 0 || (d.pagamento_liquido || 0) > 0 || (d.glosa || 0) > 0 || (d.complemento || 0) > 0);
+    if (lote) return 0;
+    return round2(Math.max(0, d?.iss || 0));
   }
   function inferValorBrutoLote(m2) {
     if ((m2.valor_bruto_lote || 0) > 0) return round2(m2.valor_bruto_lote);
@@ -17394,9 +17399,11 @@ Pode nos retornar com o posicionamento, por favor?`;
     let temRecursoAtivo = false;
     let temGlosaPendente = false;
     (fatura2.movimentacoes || []).forEach((m2) => {
-      totalPago += m2.valor_pago || 0;
-      totalGlosaAceita += m2.valor_glosa_aceita || 0;
-      totalRecuperado += m2.valor_recuperado_recurso || 0;
+      if (!m2.glosa_emissao) {
+        totalPago += m2.valor_pago || 0;
+        totalGlosaAceita += m2.valor_glosa_aceita || 0;
+        totalRecuperado += m2.valor_recuperado_recurso || 0;
+      }
       if (isParcelaPendenteAnalise(m2.status_parcela)) temGlosaPendente = true;
       else if (isParcelaEmDisputa(m2.status_parcela) || (m2.valor_recursado || 0) > 0 && m2.status_parcela !== "\u{1F7E2} LIQUIDADO" && m2.status_parcela !== "\u{1F534} PERDA ACEITA") {
         temRecursoAtivo = true;
@@ -17553,7 +17560,7 @@ Pode nos retornar com o posicionamento, por favor?`;
     let disputa = 0;
     (fatura2.movimentacoes || []).forEach((m2) => {
       caixa += valorCaixaMovimentacao(m2);
-      perda += m2.valor_glosa_aceita || 0;
+      perda += m2.glosa_emissao ? 0 : m2.valor_glosa_aceita || 0;
       disputa += valorARecursar(m2);
     });
     const iss = valorIssFatura(fatura2);
@@ -17574,7 +17581,7 @@ Pode nos retornar com o posicionamento, por favor?`;
     let perda = 0;
     (fatura2.movimentacoes || []).forEach((m2) => {
       caixa += valorCaixaMovimentacao(m2);
-      perda += m2.valor_glosa_aceita || 0;
+      perda += m2.glosa_emissao ? 0 : m2.valor_glosa_aceita || 0;
     });
     let excess = round2(caixa + perda + iss - (fatura2.valor_total || 0));
     if (excess > 9e-3) {
@@ -18205,7 +18212,7 @@ Pode nos retornar com o posicionamento, por favor?`;
   function tedPagamentoValido(ted) {
     const t2 = (ted || "").trim();
     if (!t2 || t2 === "-") return false;
-    if (t2 === "RATEIO-EMISSAO") return false;
+    if (t2 === "RATEIO-EMISSAO" || t2 === "GLOSA-EMISSAO") return false;
     return true;
   }
   function chaveRateio(r2) {
@@ -53160,7 +53167,8 @@ This typically indicates that your device does not have a healthy Internet conne
           showToast(`Os v\xEDnculos (${formatBRL(totalVinculos)}) passam o pagamento do lote (${formatBRL(pagamentoLote)}).`);
           return;
         }
-        novaFat.valor_total = calc.valFaturado || valTotal;
+        novaFat.valor_total = pagamentoLote;
+        novaFat.valor_saldo = pagamentoLote;
         novaFat.detalhe_emissao = {
           pagamento_normal: calc.pagNormal,
           ajustes_pacotes: calc.ajustesPacotes,
@@ -53171,27 +53179,25 @@ This typically indicates that your device does not have a healthy Internet conne
           liquido_nf: calc.liquidoNf,
           carteira_anterior: linhasAnt.filter((l2) => l2.valor > 9e-3 && l2.numero)
         };
-        const caixaNova = Math.max(0, Math.round((pagamentoLote - totalVinculos + Number.EPSILON) * 100) / 100);
-        const maxGlosa = Math.max(0, Math.round((novaFat.valor_total - caixaNova - iss + Number.EPSILON) * 100) / 100);
-        const glosaEmissao = Math.min(calc.glosa, maxGlosa);
-        if (caixaNova > 0 || glosaEmissao > 0) {
+        if (calc.glosa > 9e-3) {
           const prazos = calcularPrazosTiss({ convenio: convObj, dataEmissao });
           novaFat.movimentacoes.push(
             emptyMovimentacao({
               id: uid2("MOV_ML"),
-              identificador_bancario: "RATEIO-EMISSAO",
+              identificador_bancario: "GLOSA-EMISSAO",
               data_movimentacao: dataEmissao,
-              valor_pago: caixaNova,
+              valor_pago: 0,
               valor_bruto_lote: calc.valFaturado,
-              valor_glosado: glosaEmissao,
-              valor_recursado: glosaEmissao,
-              status_parcela: glosaEmissao > 0 ? STATUS_SEM_RECURSO : "\u{1F7E2} LIQUIDADO",
-              motivo_glosa: glosaEmissao > 0 ? "Glosa gerada no rateio multi-lote da NFS-e" : "",
-              protocolo_recurso: glosaEmissao > 0 ? "SEM RECURSO" : "-",
+              valor_glosado: calc.glosa,
+              valor_recursado: calc.glosa,
+              status_parcela: STATUS_SEM_RECURSO,
+              motivo_glosa: "Glosa sinalizada no demonstrativo, na emiss\xE3o da NFS-e",
+              protocolo_recurso: "SEM RECURSO",
               data_envio_recurso: "",
               data_limite_resposta: prazos.dataLimiteResposta,
               data_estimada_pagamento: prazos.dataEstimadaPagamento,
-              observacao_rateio: `Rateio na emiss\xE3o. ISS ${formatBRL(iss)} fora do caixa. V\xEDnculos ${formatBRL(totalVinculos)}, dos quais ${formatBRL(totalAnterior)} na carteira anterior.`
+              glosa_emissao: true,
+              observacao_rateio: "Entra em recurso de glosa. O pagamento, integral ou parcial, vem na emiss\xE3o seguinte. O dep\xF3sito desta nota bate com o pagamento do lote."
             })
           );
         }
