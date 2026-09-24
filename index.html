@@ -215,8 +215,8 @@ th[data-sort-col] {
     </div>
   </div>
 
-  <div id="modal-login" class="fixed inset-0 z-[80] hidden bg-slate-950/70 flex items-end sm:items-center justify-center">
-    <div class="bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-slate-800 shadow-2xl p-6 text-slate-200" style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom))">
+  <div id="modal-login" class="fixed inset-0 z-[80] hidden bg-slate-950/70 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-slate-900 w-full sm:max-w-md max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-slate-800 shadow-2xl p-6 text-slate-200" style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom))">
       <div class="flex items-start justify-between gap-3 mb-4">
         <div>
           <h3 class="text-base font-bold text-white">Entrar no Concili.a</h3>
@@ -2092,8 +2092,8 @@ th[data-sort-col] {
           <input type="text" id="equipe-ramal" placeholder="Ramal" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           <input type="email" id="equipe-contato" placeholder="E-mail de contato" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           <input type="email" id="equipe-email" required placeholder="E-mail de login" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-          <input type="password" id="equipe-senha" required minlength="6" placeholder="Senha inicial (mín. 6)" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-          <select id="equipe-perfil" required class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+          <input type="password" id="equipe-senha" required minlength="6" placeholder="Senha inicial, mínimo 6" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl sm:col-span-2">
+          <select id="equipe-perfil" required class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold sm:col-span-2">
             <option value="PERFIL_FINANCEIRO">Financeiro</option>
             <option value="PERFIL_FATURAMENTO">Faturamento</option>
             <option value="PERFIL_AUDITORIA">Auditoria</option>
@@ -2118,7 +2118,7 @@ th[data-sort-col] {
             <button type="submit" class="px-3 py-2 bg-slate-900 text-white rounded-xl font-bold">Salvar cadastro</button>
           </div>
         </form>
-        <div class="border border-slate-200 rounded-xl overflow-hidden">
+        <div class="border border-slate-200 rounded-xl overflow-x-auto">
           <table class="w-full text-left">
             <thead class="bg-slate-50 text-slate-500 uppercase text-[10px]">
               <tr>
@@ -2167,14 +2167,14 @@ th[data-sort-col] {
     </div>
   </div>
 
-  <div id="modal-senha" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
-      <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
-        <div>
+  <div id="modal-senha" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-md max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-100 flex flex-col">
+      <div class="p-5 bg-slate-900 text-white flex justify-between items-start gap-3 flex-shrink-0">
+        <div class="min-w-0">
           <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-key text-indigo-300"></i> Alterar minha senha</h3>
-          <p class="text-[11px] text-slate-400">Vale só para quem está logado. A diretoria não vê a senha nova.</p>
+          <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">Vale só para quem está logado. A diretoria não vê a senha nova.</p>
         </div>
-        <button type="button" onclick="closeModal('modal-senha')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <button type="button" onclick="closeModal('modal-senha')" class="text-slate-400 hover:text-white shrink-0" aria-label="Fechar"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <form id="form-senha" onsubmit="salvarNovaSenha(event)" class="p-5 space-y-3 text-xs">
         <div>
@@ -2183,13 +2183,13 @@ th[data-sort-col] {
         </div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Nova senha</label>
-          <input type="password" id="senha-nova" required minlength="6" autocomplete="new-password" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+          <input type="password" id="senha-nova" required minlength="6" autocomplete="new-password" placeholder="Mínimo de 6 caracteres" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
         </div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Confirmar nova senha</label>
           <input type="password" id="senha-confirma" required minlength="6" autocomplete="new-password" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
         </div>
-        <p id="senha-erro" class="hidden text-[11px] font-semibold text-rose-600"></p>
+        <p id="senha-erro" class="hidden text-[11px] font-semibold text-rose-600 leading-relaxed"></p>
         <div class="flex justify-end gap-2 pt-1">
           <button type="button" onclick="closeModal('modal-senha')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold">Voltar</button>
           <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">Salvar senha</button>
